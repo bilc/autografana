@@ -19,11 +19,11 @@
 ## 1.2 es索引
 
 index名字,xxxx为年月,按照年月进行切分  
-- grafana--service-model-xxxx
+- grafana--{service}-{model}-xxxx
 
 index mapping  
 - FILTER_xxx自动创建为keyword
-- METRIC_XXX自动创建为long
+- METRIC_xxx自动创建为long
 
 index template:创建index时的schema
 - [template.sh](./template.sh)
@@ -33,7 +33,7 @@ index template:创建index时的schema
 ## 2.1 dashboard生成规则
 
 - service: folder,用于组织管理dashboard
-- model: dashboard
+- model: dashboard,一个model会生成在service下的一个dashboard
 
 ## 2.1 绘制graph规则
 
@@ -73,8 +73,11 @@ export ESDOMAIN=localhost:9200
 
 # 6. 一些问题
 
-在开发过程中，grafana的文档很不友好，也不全面。另外也没有一个很好用的library。这里使用并fork了golang的库https://github.com/grafana-tools/sdk,修改了一些缺失参数。  
-由于文档不够全面，很难正向开发拼接参数请求grafana。   
-我的方法是先在grafana上配置好dashboard，生成对应的json，在代码中对这段json反序列化，生成一个基本的dashboard结构，然后用代码去修改需要动态生成的变量。
+在开发过程中，grafana的文档很不友好，也不全面。另外也没有一个很好用的library。
+这里使用并fork了golang的库https://github.com/grafana-tools/sdk, 新代码https://github.com/bilc/grafana-sdk， 其中增加了一些功能。  
+一个有用的json转golang struct的网站：https://mholt.github.io/json-to-go/。
 
-一个有用的json转golang struct的网站：https://mholt.github.io/json-to-go/
+由于文档不够全面，很难正向开发拼接参数请求grafana。   
+**我的方法是先在grafana上配置好dashboard，生成对应的json，在代码中对这段json反序列化，生成一个基本的dashboard结构，然后用代码去修改需要动态生成的变量。**
+
+
