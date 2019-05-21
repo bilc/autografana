@@ -66,6 +66,10 @@ export ESDOMAIN=localhost:9200
 ./es2grafana -es='http://localhost:9200' -service='mysql' -model='qps' -grafana='http://localhost:3000' -key='admin:biliucheng'
 
 ```
+
+grafana结果图片  
+![example.jpq](./example.jpg)
+
 # 5. API  
 ```
 
