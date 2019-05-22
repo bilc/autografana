@@ -1,3 +1,11 @@
+/**********************************************************
+ * Author        : biliucheng
+ * Email         : bilc_dev@163.com
+ * Last modified : 2019-05-22 12:59
+ * Filename      : es_graph.go
+ * Description   : make dashboard by es index
+ * Modified By   :
+ * *******************************************************/
 package autografana
 
 import (

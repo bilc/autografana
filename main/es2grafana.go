@@ -1,3 +1,11 @@
+/**********************************************************
+ * Author        : biliucheng
+ * Email         : bilc_dev@163.com
+ * Last modified : 2019-05-22 15:01
+ * Filename      : es2grafana.go
+ * Description   : generate grafana dashboard cmd
+ * Modified By   :
+ * *******************************************************/
 package main
 
 import (

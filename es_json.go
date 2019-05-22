@@ -1,3 +1,11 @@
+/**********************************************************
+ * Author        : biliucheng
+ * Email         : bilc_dev@163.com
+ * Last modified : 2019-05-22 14:58
+ * Filename      : es_json.go
+ * Description   : json for generating dashboard struct.
+ * Modified By   :
+ * *******************************************************/
 package autografana
 
 var es_graph_json string = `
@@ -422,9 +430,9 @@ var es_graph_json string = `
       "30d"
     ]
   },
-  "timezone": "",
+  "timezone": "utc",
   "title": "test",
-  "uid": "1g3SxiZWz",
+  "uid": null,
   "version": 8
 }
 `
