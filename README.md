@@ -8,13 +8,13 @@
 - service,必须字段，标识服务
 - model：必须字段，区分不同类型metric
 - @timestamp:必须字段，时间戳,格式"2019-01-01T01:00:00Z"
-- FILTER_xxx:自定义字段，用于筛选，xxx可以自定义，要求多余一个
+- TAG_xxx:自定义字段，用于筛选，xxx可以自定义，要求多余一个
 - METRIC_xxx:用于计数,可以多余一个
 
 示例：
 ```
-{"service":"mysql", "model":"user-stats", "@timestamp":"", "FILTER_region":"hb", "FILTER_pin":"11111", "METRIC_qps":10}
-{"service":"mysql", "model":"resouce-stats", "@timestamp":"", "FILTER_region":"hb", "FILTER_pin":"11111", "METRIC_cpu":10}
+{"service":"mysql", "model":"user-stats", "@timestamp":"", "TAG_region":"hb", "TAG_pin":"11111", "METRIC_qps":10}
+{"service":"mysql", "model":"resouce-stats", "@timestamp":"", "TAG_region":"hb", "TAG_pin":"11111", "METRIC_cpu":10}
 ```
 ## 1.2 es索引
 
@@ -22,7 +22,7 @@ index名字,xxxx为年月,按照年月进行切分
 - grafana--{service}-{model}-xxxx
 
 index mapping  
-- FILTER_xxx自动创建为keyword
+- TAG_xxx自动创建为keyword
 - METRIC_xxx自动创建为long
 
 index template:创建index时的schema
@@ -38,7 +38,7 @@ index template:创建index时的schema
 ## 2.1 绘制graph规则
 
 - @timestamp作为横轴。  
-- FILTER_xxx: 绘制成下拉框，用于选择。   
+- TAG_xxx: 绘制成下拉框，用于选择。   
 - METRIC_xxx: 会变成纵轴的值，多个METRIC_xxx会做成多个panel。  
 
 # 3. 架构推荐
@@ -60,7 +60,7 @@ export ESDOMAIN=localhost:9200
 ./template.sh
 
 #index document
-./es-store -es='http://localhost:9200' -doc='{"service":"mysql","model":"qps","@timestamp":"2019-05-20T10:00:00Z","FILTER_region":"china","FILTER_user":"Tom", "METRIC_qps":100, "METRIC_bill":10}' 
+./es-store -es='http://localhost:9200' -doc='{"service":"mysql","model":"qps","@timestamp":"2019-05-20T10:00:00Z","TAG_region":"china","TAG_user":"Tom", "METRIC_qps":100, "METRIC_bill":10}' 
 
 #generate grafana graph
 ./es2grafana -es='http://localhost:9200' -service='mysql' -model='qps' -grafana='http://localhost:3000' -key='admin:biliucheng'

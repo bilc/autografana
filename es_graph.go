@@ -14,22 +14,34 @@ import (
 	//:	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	sdk "github.com/bilc/grafana-sdk"
 	"github.com/olivere/elastic"
 )
 
-func FolderUid(service string) string {
-	return service
-}
-
-func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey string) error {
+func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey string, gratags []string) error {
 
 	index := IndexNameCommon(service, model)
-	filters, metrics, err := extractEs(esUrl, index)
+	tags, metrics, err := extractEs(esUrl, index)
 	if err != nil {
 		return err
+	}
+	if gratags != nil {
+		for _, j := range gratags {
+			exist := false
+			for _, k := range tags {
+				if k == j {
+					exist = true
+					break
+				}
+			}
+			if !exist {
+				return fmt.Errorf("tag %v not exist", j)
+			}
+		}
+		tags = gratags
 	}
 
 	grafanaCli := sdk.NewClient(grafanaUrl, grafanaApiKey, sdk.DefaultHTTPClient)
@@ -47,7 +59,7 @@ func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey s
 	}
 	b, _ := json.Marshal(status)
 	fmt.Println("---datasource: ", string(b))
-	dashboard := NewGraphBoard(index, filters, metrics, index)
+	dashboard := NewGraphBoard(index, tags, metrics, model)
 	b, _ = json.Marshal(dashboard)
 	fmt.Println("---dashboard: ", string(b))
 
@@ -78,21 +90,23 @@ func extractEs(esUrl, index string) ([]string, []string, error) {
 		indexInfo = j
 		break
 	}
-	filters := make([]string, 0)
+	tags := make([]string, 0)
 	metrics := make([]string, 0)
 	if v, ok := indexInfo.Mappings["_doc"]; ok {
 		v1 := v.(map[string]interface{})["properties"]
 		tmp := v1.(map[string]interface{})
 		for field, _ := range tmp {
-			if strings.HasPrefix(field, FIELD_FILTER_PREFIX) {
-				filters = append(filters, field)
+			if strings.HasPrefix(field, FIELD_TAG_PREFIX) {
+				tags = append(tags, field)
 			} else if strings.HasPrefix(field, FIELD_METRIC_PREFIX) {
 				metrics = append(metrics, field)
 			}
 		}
 	}
-	fmt.Println(filters, metrics)
-	return filters, metrics, nil
+	sort.Strings(tags)
+	sort.Strings(metrics)
+	fmt.Println(tags, metrics)
+	return tags, metrics, nil
 }
 
 func NewEsDataSource(esUrl string, db string) sdk.Datasource {
@@ -113,7 +127,7 @@ func NewEsDataSource(esUrl string, db string) sdk.Datasource {
 	return ds
 }
 
-func NewGraphBoard(myDataSource string, myFilters, myMetrics []string, myTitle string) *sdk.Board {
+func NewGraphBoard(myDataSource string, mytags, myMetrics []string, myTitle string) *sdk.Board {
 	var myID uint = 1
 	var board sdk.Board
 	err := json.Unmarshal([]byte(es_graph_json), &board)
@@ -128,11 +142,11 @@ func NewGraphBoard(myDataSource string, myFilters, myMetrics []string, myTitle s
 	templateVar.Datasource = &myDataSource
 
 	luceneQuery := ""
-	for _, filter := range myFilters {
-		luceneQuery += fmt.Sprintf("%s:$%s AND ", filter, filter)
-		templateVar.Label = filter
-		templateVar.Name = filter
-		templateVar.Query = fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\"}", filter)
+	for _, tag := range mytags {
+		luceneQuery += fmt.Sprintf("%s:$%s AND ", tag, tag)
+		templateVar.Label = tag
+		templateVar.Name = tag
+		templateVar.Query = fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\"}", tag)
 		//	templateVar.Definition = templateVar.Query
 		board.Templating.List = append(board.Templating.List, templateVar)
 	}
@@ -163,4 +177,8 @@ func NewGraphBoard(myDataSource string, myFilters, myMetrics []string, myTitle s
 		board.Panels = append(board.Panels, &panel)
 	}
 	return &board
+}
+
+func FolderUid(service string) string {
+	return service
 }

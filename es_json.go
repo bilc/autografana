@@ -430,7 +430,7 @@ var es_graph_json string = `
       "30d"
     ]
   },
-  "timezone": "utc",
+  "timezone": "",
   "title": "test",
   "uid": null,
   "version": 8

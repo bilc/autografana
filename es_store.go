@@ -24,7 +24,7 @@ var ALIAS_PREFIX string = "graf-alias--"
 var FIELD_SERVICE string = "service"
 var FIELD_MODEL string = "model"
 var FIELD_TIMESTAMP string = "@timestamp"
-var FIELD_FILTER_PREFIX string = "FILTER_"
+var FIELD_TAG_PREFIX string = "TAG_"
 var FIELD_METRIC_PREFIX string = "METRIC_"
 
 var FieldErr error = errors.New("field wrong")

@@ -24,6 +24,6 @@ func main() {
 	key := flag.String("key", "eyJrIjoidmphWWxFSVg1UzdXMXV3T1hoNWcwVFd2alp6NUQxd2siLCJuIjoiYXBpa2V5Y3VybCIsImlkIjoxfQ==", "grafana api key")
 	flag.Parse()
 	//"eyJrIjoidmphWWxFSVg1UzdXMXV3T1hoNWcwVFd2alp6NUQxd2siLCJuIjoiYXBpa2V5Y3VybCIsImlkIjoxfQ=="
-	err := autografana.Es2Grafana(*es, *service, *model, *grafana, *key)
+	err := autografana.Es2Grafana(*es, *service, *model, *grafana, *key, nil)
 	fmt.Println(err)
 }
