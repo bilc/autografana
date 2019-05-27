@@ -24,7 +24,7 @@ import (
 const PANEL_GRAPH = "graph"
 const PAENL_HEATMAP = "heatmap"
 
-func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey string, gratags []string, panelType string) error {
+func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey string, gratags []string, panel map[string][]string) error {
 
 	index := IndexNameCommon(service, model)
 	tags, metrics, err := extractEs(esUrl, index)
@@ -62,7 +62,7 @@ func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey s
 	}
 	b, _ := json.Marshal(status)
 	fmt.Println("---datasource: ", string(b))
-	dashboard := NewGraphBoard(index, tags, metrics, panelType, model)
+	dashboard := NewGraphBoard(index, tags, metrics, panel, model)
 	b, _ = json.Marshal(dashboard)
 	fmt.Println("---dashboard: ", string(b))
 
@@ -130,7 +130,7 @@ func NewEsDataSource(esUrl string, db string) sdk.Datasource {
 	return ds
 }
 
-func NewGraphBoard(myDataSource string, mytags, myMetrics []string, panel string, myTitle string) *sdk.Board {
+func NewGraphBoard(myDataSource string, mytags, myMetrics []string, panel map[string][]string, myTitle string) *sdk.Board {
 	var myID uint = 1
 	var board sdk.Board
 	err := json.Unmarshal([]byte(es_grafana_json), &board)
@@ -162,14 +162,17 @@ func NewGraphBoard(myDataSource string, mytags, myMetrics []string, panel string
 	//	panelVar := *board.Panels[0]
 	board.Panels = board.Panels[0:0]
 	for i, metric := range myMetrics {
-		if panel == PANEL_GRAPH{
-			panel := NewGraphPanel(myDataSource, myID,i, metric,luceneQuery)
-			myID += 1
-			board.Panels = append(board.Panels, panel)
-		}else if panel == PAENL_HEATMAP{
-			panel := NewHeatmapPanel(myDataSource, myID,i, metric,luceneQuery)
-			myID += 1
-			board.Panels = append(board.Panels, panel)
+		panelMetrics := panel[metric]
+		for _,panelMetric := range panelMetrics{
+			if panelMetric == PANEL_GRAPH{
+				panel := NewGraphPanel(myDataSource, myID,i, metric,luceneQuery)
+				myID += 1
+				board.Panels = append(board.Panels, panel)
+			}else if panelMetric == PAENL_HEATMAP{
+				panel := NewHeatmapPanel(myDataSource, myID,i, metric,luceneQuery)
+				myID += 1
+				board.Panels = append(board.Panels, panel)
+			}
 		}
 	}
 	return &board
