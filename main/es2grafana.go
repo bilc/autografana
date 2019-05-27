@@ -22,8 +22,13 @@ func main() {
 
 	grafana := flag.String("grafana", "http://127.0.0.1:3000", "grafana url")
 	key := flag.String("key", "eyJrIjoidmphWWxFSVg1UzdXMXV3T1hoNWcwVFd2alp6NUQxd2siLCJuIjoiYXBpa2V5Y3VybCIsImlkIjoxfQ==", "grafana api key")
+	//panel := flag.String("panel","graph","matric panel type: graph, heatmap or all")
 	flag.Parse()
 	//"eyJrIjoidmphWWxFSVg1UzdXMXV3T1hoNWcwVFd2alp6NUQxd2siLCJuIjoiYXBpa2V5Y3VybCIsImlkIjoxfQ=="
-	err := autografana.Es2Grafana(*es, *service, *model, *grafana, *key, nil)
+	panel := make(map[string][]string)
+	panel["METRIC_bill"] = []string{"graph"}
+	panel["METRIC_qps"] = []string{"heatmap"}
+
+	err := autografana.Es2Grafana(*es, *service, *model, *grafana, *key, nil, panel)
 	fmt.Println(err)
 }

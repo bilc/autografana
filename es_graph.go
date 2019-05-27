@@ -21,7 +21,10 @@ import (
 	"github.com/olivere/elastic"
 )
 
-func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey string, gratags []string) error {
+const PANEL_GRAPH = "graph"
+const PAENL_HEATMAP = "heatmap"
+
+func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey string, gratags []string, panel map[string][]string) error {
 
 	index := IndexNameCommon(service, model)
 	tags, metrics, err := extractEs(esUrl, index)
@@ -59,7 +62,7 @@ func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey s
 	}
 	b, _ := json.Marshal(status)
 	fmt.Println("---datasource: ", string(b))
-	dashboard := NewGraphBoard(index, tags, metrics, model)
+	dashboard := NewGraphBoard(index, tags, metrics, panel, model)
 	b, _ = json.Marshal(dashboard)
 	fmt.Println("---dashboard: ", string(b))
 
@@ -127,10 +130,10 @@ func NewEsDataSource(esUrl string, db string) sdk.Datasource {
 	return ds
 }
 
-func NewGraphBoard(myDataSource string, mytags, myMetrics []string, myTitle string) *sdk.Board {
+func NewGraphBoard(myDataSource string, mytags, myMetrics []string, panel map[string][]string, myTitle string) *sdk.Board {
 	var myID uint = 1
 	var board sdk.Board
-	err := json.Unmarshal([]byte(es_graph_json), &board)
+	err := json.Unmarshal([]byte(es_grafana_json), &board)
 	if err != nil {
 		fmt.Println("111", err)
 		return nil
@@ -155,30 +158,70 @@ func NewGraphBoard(myDataSource string, mytags, myMetrics []string, myTitle stri
 		luceneQuery = luceneQuery[0 : len(luceneQuery)-5]
 	}
 	//这里使用指针，如果*board.Panels[0]会丢失数据
-	panelb, _ := json.Marshal(board.Panels[0])
+	//panelb, _ := json.Marshal(board.Panels[0])
 	//	panelVar := *board.Panels[0]
 	board.Panels = board.Panels[0:0]
-
 	for i, metric := range myMetrics {
-		var panel sdk.Panel
-		//深拷贝
-		json.Unmarshal(panelb, &panel)
-
-		panel.Datasource = &myDataSource
-		*panel.GridPos.X = (i % 3) * 8
-		*panel.GridPos.Y = (i / 3) * 8
-		panel.ID = myID
-		panel.Title = metric
-		myID += 1
-
-		panel.GraphPanel.Targets[0].Metrics[0].Field = metric
-		panel.GraphPanel.Targets[0].Query = luceneQuery
-
-		board.Panels = append(board.Panels, &panel)
+		var panelMatic *sdk.Panel
+		if _, ok := panel[metric]; ok {
+			panelTypes := panel[metric]
+			for _, panelType := range panelTypes {
+				if panelType == PANEL_GRAPH{
+					panelMatic = NewGraphPanel(myDataSource, myID, i, metric, luceneQuery)
+				}else if panelType == PAENL_HEATMAP{
+					panelMatic = NewHeatmapPanel(myDataSource, myID, i, metric, luceneQuery)
+				}
+				myID += 1
+				board.Panels = append(board.Panels, panelMatic)
+			}
+		}else{
+			panelMatic = NewGraphPanel(myDataSource, myID, i, metric, luceneQuery)
+			myID += 1
+			board.Panels = append(board.Panels, panelMatic)
+		}
 	}
 	return &board
 }
 
 func FolderUid(service string) string {
 	return service
+}
+
+func NewGraphPanel(myDataSource string, panelId uint, metrixIndex int, metric string, luceneQuery string) *sdk.Panel {
+	var graphPanel sdk.Panel
+	err := json.Unmarshal([]byte(graph_panel_json), &graphPanel)
+	if err != nil {
+		fmt.Println("unmarshl graph panel json error:", err)
+		return nil
+	}
+
+	graphPanel.Datasource = &myDataSource
+	*graphPanel.GridPos.X = (metrixIndex % 3) * 8
+	*graphPanel.GridPos.Y = (metrixIndex / 3) * 8
+	graphPanel.ID = panelId
+	graphPanel.Title = metric
+
+	graphPanel.GraphPanel.Targets[0].Metrics[0].Field = metric
+	graphPanel.GraphPanel.Targets[0].Query = luceneQuery
+
+	return &graphPanel
+}
+
+func NewHeatmapPanel(myDataSource string, panelId uint, metrixIndex int, metric string, luceneQuery string) *sdk.Panel {
+	var heatmapPanel sdk.Panel
+	err := json.Unmarshal([]byte(heatmap_panel_json), &heatmapPanel)
+	if err != nil {
+		fmt.Println("unmarshl heatmap panel json error:", err)
+		return nil
+	}
+
+	heatmapPanel.Datasource = &myDataSource
+	*heatmapPanel.GridPos.X = (metrixIndex % 3) * 8
+	*heatmapPanel.GridPos.Y = (metrixIndex / 3) * 8
+	heatmapPanel.ID = panelId
+	heatmapPanel.Title = metric
+	heatmapPanel.HeatmapPanel.Targets[0].Metrics[0].Field = metric
+	heatmapPanel.HeatmapPanel.Targets[0].Query = luceneQuery
+
+	return &heatmapPanel
 }
