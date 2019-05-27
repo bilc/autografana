@@ -8,7 +8,7 @@
  * *******************************************************/
 package autografana
 
-var es_graph_json string = `
+var es_grafana_json string = `
 {
   "annotations": {
     "list": [
@@ -434,5 +434,196 @@ var es_graph_json string = `
   "title": "test",
   "uid": null,
   "version": 8
+}
+`
+
+var graph_panel_json string = `
+{
+  "aliasColors": {},
+  "bars": false,
+  "dashLength": 10,
+  "dashes": false,
+  "datasource": "grafana--smoke-qps*",
+  "editable": true,
+  "error": false,
+  "fill": 1,
+  "gridPos": {
+    "h": 6,
+    "w": 8,
+    "x": 8,
+    "y": 8
+  },
+  "id": 2,
+  "isNew": false,
+  "legend": {
+    "alignAsTable": false,
+    "avg": false,
+    "current": false,
+    "hideEmpty": false,
+    "hideZero": false,
+    "max": false,
+    "min": false,
+    "rightSide": false,
+    "show": true,
+    "total": false,
+    "values": false
+  },
+  "lines": true,
+  "linewidth": 1,
+  "nullPointMode": "null",
+  "percentage": false,
+  "pointradius": 2,
+  "points": false,
+  "renderer": "flot",
+  "seriesOverrides": [],
+  "spaceLength": 10,
+  "span": 0,
+  "stack": false,
+  "steppedLine": false,
+  "targets": [
+    {
+      "bucketAggs": [
+        {
+          "field": "@timestamp",
+          "id": "2",
+          "settings": {
+            "interval": "10s",
+            "min_doc_count": 0
+          },
+          "type": "date_histogram"
+        }
+      ],
+      "metrics": [
+        {
+          "field": "METRIC_qps",
+          "id": "1",
+          "meta": {},
+          "settings": {},
+          "type": "avg"
+        }
+      ],
+      "query": "FILTER_region:$FILTER_region AND FILTER_user:$FILTER_user",
+      "refId": "A",
+      "timeField": "@timestamp"
+    }
+  ],
+  "thresholds": [],
+  "timeFrom": null,
+  "timeRegions": [],
+  "timeShift": null,
+  "title": "METRIC_qps",
+  "tooltip": {
+    "shared": true,
+    "sort": 0,
+    "value_type": "individual"
+  },
+  "type": "graph",
+  "xaxis": {
+    "buckets": null,
+    "format": "",
+    "logBase": 0,
+    "mode": "time",
+    "name": null,
+    "show": true,
+    "values": []
+  },
+  "yaxes": [
+    {
+      "format": "short",
+      "logBase": 1,
+      "show": true
+    },
+    {
+      "format": "short",
+      "logBase": 1,
+      "show": true
+    }
+  ],
+  "yaxis": {
+    "align": false,
+    "alignLevel": null
+  }
+}
+`
+
+var heatmap_panel_json string = `
+{
+  "cards": {
+    "cardPadding": null,
+    "cardRound": null
+  },
+  "color": {
+    "cardColor": "#56A64B",
+    "colorScale": "sqrt",
+    "colorScheme": "interpolateOranges",
+    "exponent": 0.5,
+    "mode": "opacity"
+  },
+  "dataFormat": "timeseries",
+  "gridPos": {
+    "h": 9,
+    "w": 8,
+    "x": 0,
+    "y": 8
+  },
+  "heatmap": {},
+  "hideZeroBuckets": false,
+  "highlightCards": true,
+  "id": 6,
+  "legend": {
+    "show": false
+  },
+  "reverseYBuckets": false,
+  "timeFrom": null,
+  "timeShift": null,
+  "title": "Panel Title",
+  "tooltip": {
+    "show": true,
+    "showHistogram": false
+  },
+  "type": "heatmap",
+  "xAxis": {
+    "show": true
+  },
+  "xBucketNumber": null,
+  "xBucketSize": null,
+  "yAxis": {
+    "decimals": null,
+    "format": "short",
+    "logBase": 1,
+    "max": null,
+    "min": null,
+    "show": true,
+    "splitFactor": null
+  },
+  "yBucketBound": "auto",
+  "yBucketNumber": null,
+  "yBucketSize": null,
+  "datasource": "grafana--replicaset-create-qps*",
+  "targets": [
+    {
+      "refId": "A",
+      "metrics": [
+        {
+          "type": "avg",
+          "id": "1",
+          "field": "select field"
+        }
+      ],
+      "bucketAggs": [
+        {
+          "type": "date_histogram",
+          "id": "2",
+          "settings": {
+            "interval": "10s",
+            "min_doc_count": 0,
+            "trimEdges": 0
+          },
+          "field": "@timestamp"
+        }
+      ],
+      "timeField": "@timestamp"
+    }
+  ]
 }
 `
