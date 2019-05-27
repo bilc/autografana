@@ -448,7 +448,7 @@ var graph_panel_json string = `
   "error": false,
   "fill": 1,
   "gridPos": {
-    "h": 6,
+    "h": 8,
     "w": 8,
     "x": 8,
     "y": 8
@@ -561,7 +561,7 @@ var heatmap_panel_json string = `
   },
   "dataFormat": "timeseries",
   "gridPos": {
-    "h": 9,
+    "h": 8,
     "w": 8,
     "x": 0,
     "y": 8

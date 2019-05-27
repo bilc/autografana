@@ -162,17 +162,22 @@ func NewGraphBoard(myDataSource string, mytags, myMetrics []string, panel map[st
 	//	panelVar := *board.Panels[0]
 	board.Panels = board.Panels[0:0]
 	for i, metric := range myMetrics {
-		panelMetrics := panel[metric]
-		for _,panelMetric := range panelMetrics{
-			if panelMetric == PANEL_GRAPH{
-				panel := NewGraphPanel(myDataSource, myID,i, metric,luceneQuery)
+		var panelMatic *sdk.Panel
+		if _, ok := panel[metric]; ok {
+			panelTypes := panel[metric]
+			for _, panelType := range panelTypes {
+				if panelType == PANEL_GRAPH{
+					panelMatic = NewGraphPanel(myDataSource, myID, i, metric, luceneQuery)
+				}else if panelType == PAENL_HEATMAP{
+					panelMatic = NewHeatmapPanel(myDataSource, myID, i, metric, luceneQuery)
+				}
 				myID += 1
-				board.Panels = append(board.Panels, panel)
-			}else if panelMetric == PAENL_HEATMAP{
-				panel := NewHeatmapPanel(myDataSource, myID,i, metric,luceneQuery)
-				myID += 1
-				board.Panels = append(board.Panels, panel)
+				board.Panels = append(board.Panels, panelMatic)
 			}
+		}else{
+			panelMatic = NewGraphPanel(myDataSource, myID, i, metric, luceneQuery)
+			myID += 1
+			board.Panels = append(board.Panels, panelMatic)
 		}
 	}
 	return &board
@@ -182,10 +187,10 @@ func FolderUid(service string) string {
 	return service
 }
 
-func NewGraphPanel(myDataSource string, panelId uint,  metrixIndex int, metric string, luceneQuery string) *sdk.Panel{
+func NewGraphPanel(myDataSource string, panelId uint, metrixIndex int, metric string, luceneQuery string) *sdk.Panel {
 	var graphPanel sdk.Panel
-	err:= json.Unmarshal([]byte(graph_panel_json), &graphPanel)
-	if err != nil{
+	err := json.Unmarshal([]byte(graph_panel_json), &graphPanel)
+	if err != nil {
 		fmt.Println("unmarshl graph panel json error:", err)
 		return nil
 	}
@@ -202,10 +207,10 @@ func NewGraphPanel(myDataSource string, panelId uint,  metrixIndex int, metric s
 	return &graphPanel
 }
 
-func NewHeatmapPanel(myDataSource string, panelId uint,  metrixIndex int, metric string, luceneQuery string) *sdk.Panel{
+func NewHeatmapPanel(myDataSource string, panelId uint, metrixIndex int, metric string, luceneQuery string) *sdk.Panel {
 	var heatmapPanel sdk.Panel
 	err := json.Unmarshal([]byte(heatmap_panel_json), &heatmapPanel)
-	if err != nil{
+	if err != nil {
 		fmt.Println("unmarshl heatmap panel json error:", err)
 		return nil
 	}
