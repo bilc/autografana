@@ -18,7 +18,7 @@ import (
 	"strings"
 
 	sdk "github.com/bilc/grafana-sdk"
-	"github.com/olivere/elastic"
+	"gopkg.in/olivere/elastic.v6"
 )
 
 const PANEL_GRAPH = "graph"
