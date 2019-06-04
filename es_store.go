@@ -80,6 +80,10 @@ func IndexNameCommon(service, model string) string {
 	return INDEX_PREFIX + service + "-" + model + "*"
 }
 
+func IndexServiceName(service string) string{
+	return INDEX_PREFIX + service + "*"
+}
+
 //func IndexAlias(service, model string) string {
 //	return ALIAS_PREFIX + service + "-" + model
 //}

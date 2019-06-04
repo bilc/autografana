@@ -18,7 +18,7 @@ import (
 	"strings"
 
 	sdk "github.com/bilc/grafana-sdk"
-	"github.com/olivere/elastic"
+	"gopkg.in/olivere/elastic.v6"
 )
 
 const PANEL_GRAPH = "graph"
@@ -73,6 +73,51 @@ func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey s
 		return fmt.Errorf("setDashboard err %v", err)
 	}
 	return nil
+}
+
+func ListServiceModelByExtractEs(esUrl, index string) ([]string,error) {
+	esCli, err := elastic.NewClient(elastic.SetURL(esUrl))
+	if err != nil {
+		return nil, err
+	}
+	exists, err := esCli.IndexExists(index).Do(context.Background())
+	if err != nil || !exists {
+		return nil, fmt.Errorf("not exists or es client err %v", err)
+	}
+	reply, err := esCli.IndexGet(index).Do(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("not exists or es client err %v", err)
+	}
+	models := make([]string,0)
+	prefix := strings.TrimRight(index,"*")+"-"
+	for replyKey, _ := range reply {
+		if strings.HasPrefix(replyKey, prefix) {
+			modelTail := strings.TrimPrefix(replyKey, prefix)
+			lastIndex := strings.LastIndex(modelTail, "-")
+			model := modelTail[0: lastIndex]
+			models = append(models,model)
+		}
+	}
+
+	fmt.Println("model ",RemoveRepeatedElement(models))
+	return RemoveRepeatedElement(models), nil
+}
+
+func RemoveRepeatedElement(arr []string) (newArr []string) {
+	newArr = make([]string, 0)
+	for i := 0; i < len(arr); i++ {
+		repeat := false
+		for j := i + 1; j < len(arr); j++ {
+			if arr[i] == arr[j] {
+				repeat = true
+				break
+			}
+		}
+		if !repeat {
+			newArr = append(newArr, arr[i])
+		}
+	}
+	return
 }
 
 func extractEs(esUrl, index string) ([]string, []string, error) {
