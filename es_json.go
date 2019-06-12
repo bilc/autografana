@@ -605,7 +605,7 @@ var heatmap_panel_json string = `
       "refId": "A",
       "metrics": [
         {
-          "type": "avg",
+          "type": "count",
           "id": "1",
           "field": "select field"
         }

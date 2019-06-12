@@ -27,7 +27,7 @@ const PAENL_HEATMAP = "heatmap"
 func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey string, gratags []string, panel map[string][]string) error {
 
 	index := IndexNameCommon(service, model)
-	tags, metrics, err := extractEs(esUrl, index)
+	tags, metrics, err := ExtractEs(esUrl, index)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ func RemoveRepeatedElement(arr []string) (newArr []string) {
 	return
 }
 
-func extractEs(esUrl, index string) ([]string, []string, error) {
+func ExtractEs(esUrl, index string) ([]string, []string, error) {
 	esCli, err := elastic.NewClient(elastic.SetURL(esUrl))
 	if err != nil {
 		return nil, nil, err

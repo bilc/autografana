@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/olivere/elastic"
+	"gopkg.in/olivere/elastic.v6"
 )
 
 var INDEX_PREFIX string = "grafana--"
