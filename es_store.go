@@ -56,11 +56,11 @@ func (e *EsClient) PutDoc(doc map[string]interface{}) error {
 	}
 	index := IndexName(service, model)
 
-	_, err := e.Client.Index().Index(index).BodyJson(doc).Do(context.Background())
+	_, err := e.Client.Index().Type("_doc").Index(index).BodyJson(doc).Do(context.Background())
 	if err != nil {
 		if strings.Contains(err.Error(), "index_not_found_exception") {
 			if _, err = e.Client.CreateIndex(index).Do(context.Background()); err == nil {
-				_, err = e.Client.Index().Index(index).BodyJson(doc).Do(context.Background())
+				_, err = e.Client.Index().Type("_doc").Index(index).BodyJson(doc).Do(context.Background())
 			}
 		}
 	}
