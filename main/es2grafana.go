@@ -21,7 +21,7 @@ func main() {
 	model := flag.String("model", "qps", "es index field model")
 
 	grafana := flag.String("grafana", "http://127.0.0.1:3000", "grafana url")
-	key := flag.String("key", "eyJrIjoidmphWWxFSVg1UzdXMXV3T1hoNWcwVFd2alp6NUQxd2siLCJuIjoiYXBpa2V5Y3VybCIsImlkIjoxfQ==", "grafana api key")
+	key := flag.String("key", "eyJrIjoiSk5ybDV5Tlp6YkZoQU0wUEZmaktHVE52MllVN1oyR0wiLCJuIjoiYWRtaW4iLCJpZCI6MX0=", "grafana api key")
 	//panel := flag.String("panel","graph","matric panel type: graph, heatmap or all")
 	flag.Parse()
 	//"eyJrIjoidmphWWxFSVg1UzdXMXV3T1hoNWcwVFd2alp6NUQxd2siLCJuIjoiYXBpa2V5Y3VybCIsImlkIjoxfQ=="
@@ -29,8 +29,13 @@ func main() {
 	panel["METRIC_bill"] = []string{"graph"}
 	panel["METRIC_qps"] = []string{"heatmap"}
 	tagsSorts := []string{"TAG_region", "TAG_az", "TAG_host", "TAG_source_type", "TAG_flavor", "TAG_user"}
+	tagsCascade := make(map[string][]string)
+	tagsCascade["TAG_flavor"] = []string{"TAG_source_type"}
+	tagsCascade["TAG_az"] = []string{"TAG_region"}
+	tagsCascade["TAG_host"] = []string{"TAG_region", "TAG_az"}
+	tagsCascade["TAG_user"] = []string{"TAG_region","TAG_az", "TAG_host"}
 
-	err := autografana.Es2Grafana(*es, *service, *model, *grafana, *key, nil, tagsSorts, panel)
+	err := autografana.Es2Grafana(*es, *service, *model, *grafana, *key, nil, tagsSorts, tagsCascade, panel)
 	fmt.Println(err)
 
 	temp := autografana.TemplateVars{

@@ -24,7 +24,7 @@ import (
 const PANEL_GRAPH = "graph"
 const PAENL_HEATMAP = "heatmap"
 
-func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey string, gratags,tagsSorts []string, panel map[string][]string) error {
+func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey string, gratags,tagsSorts []string, tagsCascade, panel map[string][]string) error {
 	ExpectTagsSort = tagsSorts
 	index := IndexNameCommon(service, model)
 	tags, metrics, err := ExtractEs(esUrl, index)
@@ -62,7 +62,7 @@ func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey s
 	}
 	b, _ := json.Marshal(status)
 	fmt.Println("---datasource: ", string(b))
-	dashboard := NewGraphBoard(index, tags, metrics, panel, model)
+	dashboard := NewGraphBoard(index, tags, tagsCascade, metrics, panel, model)
 	b, _ = json.Marshal(dashboard)
 	fmt.Println("---dashboard: ", string(b))
 
@@ -86,7 +86,7 @@ func ListServiceModelByExtractEs(esUrl, index string) ([]string,error) {
 	}
 	reply, err := esCli.IndexGet(index).Do(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("not exists or es client err %v", err)
+		return nil, fmt.Errorf("get es index error %v", err)
 	}
 	models := make([]string,0)
 	prefix := strings.TrimRight(index,"*")+"-"
@@ -131,7 +131,7 @@ func ExtractEs(esUrl, index string) ([]string, []string, error) {
 	}
 	reply, err := esCli.IndexGet(index).Do(context.Background())
 	if err != nil || len(reply) == 0 {
-		return nil, nil, fmt.Errorf("not exists or es client err %v", err)
+		return nil, nil, fmt.Errorf("get es insdex err %v", err)
 	}
 	var indexInfo *elastic.IndicesGetResponse
 	for _, j := range reply {
@@ -175,12 +175,12 @@ func NewEsDataSource(esUrl string, db string) sdk.Datasource {
 	return ds
 }
 
-func NewGraphBoard(myDataSource string, mytags, myMetrics []string, panel map[string][]string, myTitle string) *sdk.Board {
+func NewGraphBoard(myDataSource string, mytags []string, mytagsCascade map[string][]string, myMetrics []string, panel map[string][]string, myTitle string) *sdk.Board {
 	var myID uint = 1
 	var board sdk.Board
 	err := json.Unmarshal([]byte(es_grafana_json), &board)
 	if err != nil {
-		fmt.Println("111", err)
+		fmt.Println("grafana json unmarshal error", err)
 		return nil
 	}
 	board.Title = myTitle
@@ -194,19 +194,19 @@ func NewGraphBoard(myDataSource string, mytags, myMetrics []string, panel map[st
 		luceneQuery += fmt.Sprintf("%s:$%s AND ", tag, tag)
 		templateVar.Label = tag
 		templateVar.Name = tag
-		// setting query cascaded
-		if tag == FIELD_TAG_FLAVOR || tag == FIELD_TAG_REGION {
-			templateVar.Query = fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\",\"query\":\"%s:$%s\"}",
-				tag, FIELD_TAG_SOURCE_TYPE, FIELD_TAG_SOURCE_TYPE)
-		}else if tag == FIELD_TAG_AZ && isExist(FIELD_TAG_REGION, mytags){
-			templateVar.Query = fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\",\"query\":\"%s:$%s\"}",
-				tag, FIELD_TAG_REGION, FIELD_TAG_REGION)
-		}else if tag == FIELD_TAG_HOST && isExist(FIELD_TAG_REGION, mytags) && isExist(FIELD_TAG_AZ, mytags){
-			templateVar.Query = fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\",\"query\":\"%s:$%s AND %s:$%s\"}",
-				tag, FIELD_TAG_REGION, FIELD_TAG_REGION, FIELD_TAG_AZ, FIELD_TAG_AZ)
-		}else if tag == FIELD_TAG_USER && isExist(FIELD_TAG_REGION, mytags) && isExist(FIELD_TAG_AZ, mytags) && isExist(FIELD_TAG_HOST, mytags){
-			templateVar.Query = fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\",\"query\":\"%s:$%s AND %s:$%s AND %s:$%s\"}",
-				tag, FIELD_TAG_REGION, FIELD_TAG_REGION, FIELD_TAG_AZ, FIELD_TAG_AZ, FIELD_TAG_HOST, FIELD_TAG_HOST)
+		// if tag in mytagsCascade, then setting query cascaded
+		if relation,ok := mytagsCascade[tag]; ok{
+			queryPrefix := fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\",\"query\":\"", tag)
+			query := ""
+			querySuffix := "\"}"
+			for i, r := range relation{
+				if i == len(relation)-1{
+					query += fmt.Sprintf("%s:$%s", r, r)
+				}else{
+					query += fmt.Sprintf("%s:$%s AND ", r, r)
+				}
+			}
+			templateVar.Query = queryPrefix + query + querySuffix
 		}else{
 			templateVar.Query = fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\"}", tag)
 		}
