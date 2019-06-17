@@ -32,8 +32,8 @@ func main() {
 	tagsCascade := make(map[string][]string)
 	tagsCascade["TAG_flavor"] = []string{"TAG_source_type"}
 	tagsCascade["TAG_az"] = []string{"TAG_region"}
-	tagsCascade["TAG_host"] = []string{"TAG_region", "TAG_az"}
-	tagsCascade["TAG_user"] = []string{"TAG_region","TAG_az", "TAG_host"}
+	tagsCascade["TAG_host"] = []string{"TAG_az"}
+	tagsCascade["TAG_user"] = []string{"TAG_host", "TAG_flavor"}
 
 	err := autografana.Es2Grafana(*es, *service, *model, *grafana, *key, nil, tagsSorts, tagsCascade, panel)
 	fmt.Println(err)
