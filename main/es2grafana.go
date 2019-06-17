@@ -28,7 +28,22 @@ func main() {
 	panel := make(map[string][]string)
 	panel["METRIC_bill"] = []string{"graph"}
 	panel["METRIC_qps"] = []string{"heatmap"}
+	tagsSorts := []string{"TAG_region", "TAG_az", "TAG_host", "TAG_source_type", "TAG_flavor", "TAG_user"}
 
-	err := autografana.Es2Grafana(*es, *service, *model, *grafana, *key, nil, panel)
+	err := autografana.Es2Grafana(*es, *service, *model, *grafana, *key, nil, tagsSorts, panel)
 	fmt.Println(err)
+
+	temp := autografana.TemplateVars{
+		{Name: "TAG_user", Sort: 4},
+		{Name: "TAG_b", Sort: 5},
+		{Name: "TAG_host", Sort: 3},
+		{Name: "TAG_AZ", Sort: 2},
+		{Name: "TAG_region", Sort: 1},
+		{Name: "TAG_a", Sort: 6},
+		{Name: "TAG_c", Sort: 7},
+	}
+	autografana.SortTemplatingList(temp)
+	for _, t := range temp {
+		fmt.Println(t)
+	}
 }

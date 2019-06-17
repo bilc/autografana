@@ -24,8 +24,8 @@ import (
 const PANEL_GRAPH = "graph"
 const PAENL_HEATMAP = "heatmap"
 
-func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey string, gratags []string, panel map[string][]string) error {
-
+func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey string, gratags,tagsSorts []string, panel map[string][]string) error {
+	ExpectTagsSort = tagsSorts
 	index := IndexNameCommon(service, model)
 	tags, metrics, err := ExtractEs(esUrl, index)
 	if err != nil {
@@ -194,10 +194,27 @@ func NewGraphBoard(myDataSource string, mytags, myMetrics []string, panel map[st
 		luceneQuery += fmt.Sprintf("%s:$%s AND ", tag, tag)
 		templateVar.Label = tag
 		templateVar.Name = tag
-		templateVar.Query = fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\"}", tag)
+		// setting query cascaded
+		if tag == FIELD_TAG_FLAVOR || tag == FIELD_TAG_REGION {
+			templateVar.Query = fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\",\"query\":\"%s:$%s\"}",
+				tag, FIELD_TAG_SOURCE_TYPE, FIELD_TAG_SOURCE_TYPE)
+		}else if tag == FIELD_TAG_AZ && isExist(FIELD_TAG_REGION, mytags){
+			templateVar.Query = fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\",\"query\":\"%s:$%s\"}",
+				tag, FIELD_TAG_REGION, FIELD_TAG_REGION)
+		}else if tag == FIELD_TAG_HOST && isExist(FIELD_TAG_REGION, mytags) && isExist(FIELD_TAG_AZ, mytags){
+			templateVar.Query = fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\",\"query\":\"%s:$%s AND %s:$%s\"}",
+				tag, FIELD_TAG_REGION, FIELD_TAG_REGION, FIELD_TAG_AZ, FIELD_TAG_AZ)
+		}else if tag == FIELD_TAG_USER && isExist(FIELD_TAG_REGION, mytags) && isExist(FIELD_TAG_AZ, mytags) && isExist(FIELD_TAG_HOST, mytags){
+			templateVar.Query = fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\",\"query\":\"%s:$%s AND %s:$%s AND %s:$%s\"}",
+				tag, FIELD_TAG_REGION, FIELD_TAG_REGION, FIELD_TAG_AZ, FIELD_TAG_AZ, FIELD_TAG_HOST, FIELD_TAG_HOST)
+		}else{
+			templateVar.Query = fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\"}", tag)
+		}
 		//	templateVar.Definition = templateVar.Query
 		board.Templating.List = append(board.Templating.List, templateVar)
 	}
+	SortTemplatingList(board.Templating.List)
+
 
 	if len(luceneQuery) > 5 {
 		luceneQuery = luceneQuery[0 : len(luceneQuery)-5]
@@ -226,6 +243,51 @@ func NewGraphBoard(myDataSource string, mytags, myMetrics []string, panel map[st
 		}
 	}
 	return &board
+}
+
+type TemplateVars []sdk.TemplateVar
+
+func getIndex(name string, arrays []string) int {
+	for index, arr := range arrays {
+		if strings.EqualFold(arr, name){
+			return index
+		}
+	}
+	return -1
+}
+
+func isExist(name string, arrays []string) bool{
+	for _, arr := range arrays{
+		if arr == name{
+			return true
+		}
+	}
+	return false
+}
+
+// sort TAG_* expected and in-situ output user-defined
+func (c TemplateVars) Less(i, j int) bool {
+	 //c[i].Name < c[j].Name
+	indexI := getIndex(c[i].Name, ExpectTagsSort)
+	indexJ := getIndex(c[j].Name, ExpectTagsSort)
+
+	if indexI != -1 && indexJ != -1 {
+		return indexI < indexJ
+	} else {
+		return indexI > indexJ
+	}
+}
+
+func (c TemplateVars) Len() int {
+	return len(c)
+}
+
+func (c TemplateVars) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i]
+}
+
+func SortTemplatingList(templateVars TemplateVars){
+	sort.Sort(templateVars)
 }
 
 func FolderUid(service string) string {

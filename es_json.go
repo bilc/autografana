@@ -605,7 +605,7 @@ var heatmap_panel_json string = `
       "refId": "A",
       "metrics": [
         {
-          "type": "count",
+          "type": "max",
           "id": "1",
           "field": "select field"
         }
@@ -622,6 +622,7 @@ var heatmap_panel_json string = `
           "field": "@timestamp"
         }
       ],
+      "query": "FILTER_region:$FILTER_region AND FILTER_user:$FILTER_user",
       "timeField": "@timestamp"
     }
   ]

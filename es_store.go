@@ -27,6 +27,15 @@ var FIELD_TIMESTAMP string = "@timestamp"
 var FIELD_TAG_PREFIX string = "TAG_"
 var FIELD_METRIC_PREFIX string = "METRIC_"
 
+var FIELD_TAG_REGION string = "TAG_region"
+var FIELD_TAG_AZ string = "TAG_az"
+var FIELD_TAG_HOST string = "TAG_host"
+var FIELD_TAG_SOURCE_TYPE string = "TAG_source_type"
+var FIELD_TAG_FLAVOR string = "TAG_flavor"
+var FIELD_TAG_USER string = "TAG_user"
+
+var ExpectTagsSort = []string{FIELD_TAG_SOURCE_TYPE, FIELD_TAG_FLAVOR, FIELD_TAG_REGION, FIELD_TAG_AZ, FIELD_TAG_HOST, FIELD_TAG_USER}
+
 var FieldErr error = errors.New("field wrong")
 
 type EsClient struct {
