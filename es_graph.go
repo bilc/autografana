@@ -199,8 +199,9 @@ func NewGraphBoard(myDataSource string, mytags []string, mytagsCascade map[strin
 			queryPrefix := fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\",\"query\":\"", tag)
 			query := ""
 			querySuffix := "\"}"
-			for i, r := range relation{
-				if i == len(relation)-1{
+			existTags := getExistTags(relation, mytags)
+			for i, r := range existTags{
+				if i == len(existTags)-1{
 					query += fmt.Sprintf("%s:$%s", r, r)
 				}else{
 					query += fmt.Sprintf("%s:$%s AND ", r, r)
@@ -254,6 +255,18 @@ func getIndex(name string, arrays []string) int {
 		}
 	}
 	return -1
+}
+
+func getExistTags(tags, mytags[]string ) []string{
+	var existTag []string
+	for _,tag := range tags{
+		for _,mytag := range mytags{
+			if tag == mytag{
+				existTag = append(existTag, tag)
+			}
+		}
+	}
+	return existTag
 }
 
 func isExist(name string, arrays []string) bool{

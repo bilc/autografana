@@ -35,7 +35,8 @@ func main() {
 	tagsCascade["TAG_host"] = []string{"TAG_az"}
 	tagsCascade["TAG_user"] = []string{"TAG_host", "TAG_flavor"}
 
-	err := autografana.Es2Grafana(*es, *service, *model, *grafana, *key, nil, tagsSorts, tagsCascade, panel)
+	graTags := []string{"TAG_region","TAG_user","TAG_az", "TAG_a", "TAG_b"}
+	err := autografana.Es2Grafana(*es, *service, *model, *grafana, *key, graTags, tagsSorts, tagsCascade, panel)
 	fmt.Println(err)
 
 	temp := autografana.TemplateVars{
