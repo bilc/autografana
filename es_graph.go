@@ -24,10 +24,10 @@ import (
 const PANEL_GRAPH = "graph"
 const PAENL_HEATMAP = "heatmap"
 
-func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey string, gratags []string, panel map[string][]string) error {
-
+func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey string, gratags,tagsSorts []string, tagsCascade, panel map[string][]string) error {
+	ExpectTagsSort = tagsSorts
 	index := IndexNameCommon(service, model)
-	tags, metrics, err := extractEs(esUrl, index)
+	tags, metrics, err := ExtractEs(esUrl, index)
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func Es2Grafana(esUrl, service, model string, grafanaUrl string, grafanaApiKey s
 	}
 	b, _ := json.Marshal(status)
 	fmt.Println("---datasource: ", string(b))
-	dashboard := NewGraphBoard(index, tags, metrics, panel, model)
+	dashboard := NewGraphBoard(index, tags, tagsCascade, metrics, panel, model)
 	b, _ = json.Marshal(dashboard)
 	fmt.Println("---dashboard: ", string(b))
 
@@ -86,7 +86,7 @@ func ListServiceModelByExtractEs(esUrl, index string) ([]string,error) {
 	}
 	reply, err := esCli.IndexGet(index).Do(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("not exists or es client err %v", err)
+		return nil, fmt.Errorf("get es index error %v", err)
 	}
 	models := make([]string,0)
 	prefix := strings.TrimRight(index,"*")+"-"
@@ -120,7 +120,7 @@ func RemoveRepeatedElement(arr []string) (newArr []string) {
 	return
 }
 
-func extractEs(esUrl, index string) ([]string, []string, error) {
+func ExtractEs(esUrl, index string) ([]string, []string, error) {
 	esCli, err := elastic.NewClient(elastic.SetURL(esUrl))
 	if err != nil {
 		return nil, nil, err
@@ -131,7 +131,7 @@ func extractEs(esUrl, index string) ([]string, []string, error) {
 	}
 	reply, err := esCli.IndexGet(index).Do(context.Background())
 	if err != nil || len(reply) == 0 {
-		return nil, nil, fmt.Errorf("not exists or es client err %v", err)
+		return nil, nil, fmt.Errorf("get es insdex err %v", err)
 	}
 	var indexInfo *elastic.IndicesGetResponse
 	for _, j := range reply {
@@ -175,12 +175,12 @@ func NewEsDataSource(esUrl string, db string) sdk.Datasource {
 	return ds
 }
 
-func NewGraphBoard(myDataSource string, mytags, myMetrics []string, panel map[string][]string, myTitle string) *sdk.Board {
+func NewGraphBoard(myDataSource string, mytags []string, mytagsCascade map[string][]string, myMetrics []string, panel map[string][]string, myTitle string) *sdk.Board {
 	var myID uint = 1
 	var board sdk.Board
 	err := json.Unmarshal([]byte(es_grafana_json), &board)
 	if err != nil {
-		fmt.Println("111", err)
+		fmt.Println("grafana json unmarshal error", err)
 		return nil
 	}
 	board.Title = myTitle
@@ -194,10 +194,28 @@ func NewGraphBoard(myDataSource string, mytags, myMetrics []string, panel map[st
 		luceneQuery += fmt.Sprintf("%s:$%s AND ", tag, tag)
 		templateVar.Label = tag
 		templateVar.Name = tag
-		templateVar.Query = fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\"}", tag)
+		// if tag in mytagsCascade, then setting query cascaded
+		if relation,ok := mytagsCascade[tag]; ok{
+			queryPrefix := fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\",\"query\":\"", tag)
+			query := ""
+			querySuffix := "\"}"
+			existTags := getExistTags(relation, mytags)
+			for i, r := range existTags{
+				if i == len(existTags)-1{
+					query += fmt.Sprintf("%s:$%s", r, r)
+				}else{
+					query += fmt.Sprintf("%s:$%s AND ", r, r)
+				}
+			}
+			templateVar.Query = queryPrefix + query + querySuffix
+		}else{
+			templateVar.Query = fmt.Sprintf("{\"find\":\"terms\",\"field\":\"%s\"}", tag)
+		}
 		//	templateVar.Definition = templateVar.Query
 		board.Templating.List = append(board.Templating.List, templateVar)
 	}
+	SortTemplatingList(board.Templating.List)
+
 
 	if len(luceneQuery) > 5 {
 		luceneQuery = luceneQuery[0 : len(luceneQuery)-5]
@@ -226,6 +244,63 @@ func NewGraphBoard(myDataSource string, mytags, myMetrics []string, panel map[st
 		}
 	}
 	return &board
+}
+
+type TemplateVars []sdk.TemplateVar
+
+func getIndex(name string, arrays []string) int {
+	for index, arr := range arrays {
+		if strings.EqualFold(arr, name){
+			return index
+		}
+	}
+	return -1
+}
+
+func getExistTags(tags, mytags[]string ) []string{
+	var existTag []string
+	for _,tag := range tags{
+		for _,mytag := range mytags{
+			if tag == mytag{
+				existTag = append(existTag, tag)
+			}
+		}
+	}
+	return existTag
+}
+
+func isExist(name string, arrays []string) bool{
+	for _, arr := range arrays{
+		if arr == name{
+			return true
+		}
+	}
+	return false
+}
+
+// sort TAG_* expected and in-situ output user-defined
+func (c TemplateVars) Less(i, j int) bool {
+	 //c[i].Name < c[j].Name
+	indexI := getIndex(c[i].Name, ExpectTagsSort)
+	indexJ := getIndex(c[j].Name, ExpectTagsSort)
+
+	if indexI != -1 && indexJ != -1 {
+		return indexI < indexJ
+	} else {
+		return indexI > indexJ
+	}
+}
+
+func (c TemplateVars) Len() int {
+	return len(c)
+}
+
+func (c TemplateVars) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i]
+}
+
+func SortTemplatingList(templateVars TemplateVars){
+	sort.Sort(templateVars)
 }
 
 func FolderUid(service string) string {
