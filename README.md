@@ -8,7 +8,7 @@
 - service,必须字段，标识服务
 - model：必须字段，区分不同类型metric
 - @timestamp:必须字段，时间戳,格式"2019-01-01T01:00:00+08:00"
-- TAG_xxx:自定义字段，用于筛选，xxx可以自定义，要求多余一个,如果需要定义source-type,flavor等字段，建议将TAG统一设置为TAG_source_type, TAG_flavor,TAG_region,TAG_az,TAG_host,TAG_user,我们会设置这些tag之间的级联关系
+- TAG_xxx:自定义字段，用于筛选，xxx可以自定义，要求多余一个
 - METRIC_xxx:用于计数,可以多余一个
 
 示例：
