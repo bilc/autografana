@@ -409,13 +409,7 @@ type Target struct {
 
 	// For Elasticsearch
 	DsType  *string `json:"dsType,omitempty"`
-	Metrics []struct {
-		ID       string      `json:"id"`
-		Field    string      `json:"field"`
-		Type     string      `json:"type"`
-		Meta     interface{} `json:"meta"`
-		Settings interface{} `json:"settings"`
-	} `json:"metrics,omitempty"`
+	Metrics []Metric `json:"metrics,omitempty"`
 	Query      string `json:"query,omitempty"`
 	Alias      string `json:"alias,omitempty"`
 	RawQuery   bool   `json:"rawQuery,omitempty"`
@@ -440,6 +434,14 @@ type Target struct {
 	Dimensions map[string]string `json:"dimensions,omitempty"`
 	Period     string            `json:"period,omitempty"`
 	Region     string            `json:"region,omitempty"`
+}
+
+type Metric struct {
+	ID       string      `json:"id"`
+	Field    string      `json:"field"`
+	Type     string      `json:"type"`
+	Meta     interface{} `json:"meta"`
+	Settings interface{} `json:"settings"`
 }
 
 type MapType struct {

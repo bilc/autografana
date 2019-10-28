@@ -344,7 +344,7 @@ var es_grafana_json string = `
   "templating": {
     "list": [
       {
-        "allValue": null,
+        "allValue": "*",
         "current": {
           "tags": [],
           "text": "All",
@@ -402,8 +402,8 @@ var es_grafana_json string = `
     ]
   },
   "time": {
-    "from": "now/d",
-    "to": "now/d"
+    "from": "now-24h",
+    "to": "now"
   },
   "timepicker": {
     "refresh_intervals": [
