@@ -33,18 +33,12 @@ func main() {
 	mypanel := []autografana.MyPanel{
 		{
 			Title: "bill used",
-			MyMetrics: []autografana.MyMetric{
-				{Field: "SUM_METRIC_bill_current", Type: "sum"},
-				{Field: "SUM_METRIC_bill_total", Type: "sum"},
-			},
+			Metrics: []string{"SUM_METRIC_bill_current", "SUM_METRIC_bill_total"},
 			Type: autografana.PANEL_GRAPH,
 			Interval: "10s",
 		},{
 			Title: "qps used",
-			MyMetrics: []autografana.MyMetric{
-				{Field: "METRIC_qps_current", Type: "avg"},
-				{Field: "METRIC_qps_total", Type: "avg"},
-			},
+			Metrics: []string{"METRIC_qps_current", "METRIC_qps_total"},
 			Type: autografana.PAENL_HEATMAP,
 			Interval: "20s",
 		},

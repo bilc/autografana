@@ -29,7 +29,7 @@ const METRIC_INTERVAL= "interval"
 
 type MyPanel struct {
 	Title string `json:"title"`
-	MyMetrics []MyMetric `json:"myMetrics"`
+	Metrics []string `json:"metrics"`
 	Type string `json:"type"` // panel type: graph, heatmap
 	Interval string `json:"interval"`
 }
@@ -322,9 +322,9 @@ func NewGraphBoard(myDataSource string, mytags []string, mytagsCascade map[strin
 	for index, myPanel :=  range myPanels{
 		var panel *sdk.Panel
 		if myPanel.Type == PANEL_GRAPH{
-			panel = NewGraphPanel(myDataSource, myID, index, myPanel.Title, myPanel.Interval, myPanel.MyMetrics, luceneQuery)
+			panel = NewGraphPanel(myDataSource, myID, index, myPanel.Title, myPanel.Interval, myPanel.Metrics, luceneQuery)
 		}else if myPanel.Type == PAENL_HEATMAP{
-			panel = NewHeatmapPanel(myDataSource, myID,index, myPanel.Title, myPanel.Interval, myPanel.MyMetrics, luceneQuery)
+			panel = NewHeatmapPanel(myDataSource, myID,index, myPanel.Title, myPanel.Interval, myPanel.Metrics, luceneQuery)
 		}
 		myID += 1
 		board.Panels = append(board.Panels, panel)
@@ -393,7 +393,7 @@ func FolderUid(service string) string {
 	return service
 }
 
-func NewGraphPanel(myDataSource string, panelId uint, panelIndex int, panelTile, panelInterval string, myMetrics []MyMetric, luceneQuery string) *sdk.Panel {
+func NewGraphPanel(myDataSource string, panelId uint, panelIndex int, panelTile, panelInterval string, myMetrics []string, luceneQuery string) *sdk.Panel {
 	var graphPanel sdk.Panel
 	err := json.Unmarshal([]byte(graph_panel_json), &graphPanel)
 	if err != nil {
@@ -413,8 +413,8 @@ func NewGraphPanel(myDataSource string, panelId uint, panelIndex int, panelTile,
 	metrics := make([]sdk.Metric, len(myMetrics))
 	for i, metric := range myMetrics{
 		metrics[i].ID = strconv.Itoa(i)
-		metrics[i].Field = metric.Field
-		metrics[i].Type = metric.Type
+		metrics[i].Field = metric
+		metrics[i].Type = getMetricType(metric)
 		metrics[i].Meta = struct {}{}
 		metrics[i].Settings = struct {}{}
 	}
@@ -422,7 +422,7 @@ func NewGraphPanel(myDataSource string, panelId uint, panelIndex int, panelTile,
 	return &graphPanel
 }
 
-func NewHeatmapPanel(myDataSource string, panelId uint, panelIndex int, panelTile, panelInterval string,  myMetrics []MyMetric, luceneQuery string) *sdk.Panel {
+func NewHeatmapPanel(myDataSource string, panelId uint, panelIndex int, panelTile, panelInterval string,  myMetrics []string, luceneQuery string) *sdk.Panel {
 	var heatmapPanel sdk.Panel
 	err := json.Unmarshal([]byte(heatmap_panel_json), &heatmapPanel)
 	if err != nil {
@@ -442,8 +442,8 @@ func NewHeatmapPanel(myDataSource string, panelId uint, panelIndex int, panelTil
 	metrics := make([]sdk.Metric, len(myMetrics))
 	for i, metric := range myMetrics{
 		metrics[i].ID = strconv.Itoa(i)
-		metrics[i].Field = metric.Field
-		metrics[i].Type = metric.Type
+		metrics[i].Field = metric
+		metrics[i].Type = getMetricType(metric)
 		metrics[i].Meta = struct {}{}
 		metrics[i].Settings = struct {}{}
 	}
@@ -451,41 +451,8 @@ func NewHeatmapPanel(myDataSource string, panelId uint, panelIndex int, panelTil
 	return &heatmapPanel
 }
 
-/**
- use this method to get metric interval
- when metric="interval-20s_METRIC_cpu_util" return "20s"
- when metric="METRIC_cpu_util" return "10s"
-*/
-var getMetricInterval = func(metric string) (interval string){
-	if strings.HasPrefix(metric, METRIC_INTERVAL){
-		interval = strings.TrimLeft(strings.Split(metric, "_")[0], METRIC_INTERVAL+ "-")
-	}else{
-		interval = "10s"
-	}
-	return
-}
-
-/**
- use this method to get metric field
- when metric="interval-20s_METRIC_cpu_util" return "METRIC_cpu_util"
- when metric="METRIC_cpu_util" return "METRIC_cpu_util"
-*/
-var getMetricField = func(metric string) (field string){
-	if strings.HasPrefix(metric, METRIC_INTERVAL){
-		field = strings.TrimLeft(metric, strings.Split(metric, "_")[0] + "_")
-	}else{
-		field = metric
-	}
-	return
-}
-
-/**
- use thie method to get metric type
- when metric="interval-20s_METRIC_cpu_util" return "avg"
- when metric="SUM_METRIC_cpu_util" return "sum"
-*/
-var getMetricType = func(metric string) (mType string){
-	if strings.HasPrefix(getMetricField(metric), FIELD_SUM_METRIC_PREFIX){
+var getMetricType = func(metric string) (mType string) {
+	if strings.HasPrefix(metric, FIELD_SUM_METRIC_PREFIX){
 		mType = "sum"
 	}else{
 		mType = "avg"
