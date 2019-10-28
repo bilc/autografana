@@ -16,16 +16,28 @@ import (
 	"time"
 
 	"github.com/olivere/elastic"
+	//elastic "gopkg.in/olivere/elastic.v6"
 )
 
-var INDEX_PREFIX string = "grafana--"
+var INDEX_PREFIX string = "jvessel-grafana-"
+//var INDEX_PREFIX string = "grafana--"
 var ALIAS_PREFIX string = "graf-alias--"
 
 var FIELD_SERVICE string = "service"
 var FIELD_MODEL string = "model"
 var FIELD_TIMESTAMP string = "@timestamp"
-var FIELD_FILTER_PREFIX string = "FILTER_"
+var FIELD_TAG_PREFIX string = "TAG_"
 var FIELD_METRIC_PREFIX string = "METRIC_"
+var FIELD_SUM_METRIC_PREFIX string = "SUM_METRIC_"
+
+var FIELD_TAG_REGION string = "TAG_region"
+var FIELD_TAG_AZ string = "TAG_az"
+var FIELD_TAG_HOST string = "TAG_host"
+var FIELD_TAG_SOURCE_TYPE string = "TAG_source_type"
+var FIELD_TAG_FLAVOR string = "TAG_flavor"
+var FIELD_TAG_USER string = "TAG_user"
+
+var ExpectTagsSort = []string{FIELD_TAG_SOURCE_TYPE, FIELD_TAG_FLAVOR, FIELD_TAG_REGION, FIELD_TAG_AZ, FIELD_TAG_HOST, FIELD_TAG_USER}
 
 var FieldErr error = errors.New("field wrong")
 
@@ -36,7 +48,7 @@ type EsClient struct {
 }
 
 func NewEsClient(url string) (*EsClient, error) {
-	client, err := elastic.NewClient(elastic.SetURL(url))
+	client, err := elastic.NewClient(elastic.SetURL(url), elastic.SetHealthcheck(false), elastic.SetSniff(false))
 	if err != nil {
 		return nil, err
 	}
@@ -56,11 +68,11 @@ func (e *EsClient) PutDoc(doc map[string]interface{}) error {
 	}
 	index := IndexName(service, model)
 
-	_, err := e.Client.Index().Index(index).BodyJson(doc).Do(context.Background())
+	_, err := e.Client.Index().Type("_doc").Index(index).BodyJson(doc).Do(context.Background())
 	if err != nil {
 		if strings.Contains(err.Error(), "index_not_found_exception") {
 			if _, err = e.Client.CreateIndex(index).Do(context.Background()); err == nil {
-				_, err = e.Client.Index().Index(index).BodyJson(doc).Do(context.Background())
+				_, err = e.Client.Index().Type("_doc").Index(index).BodyJson(doc).Do(context.Background())
 			}
 		}
 	}
@@ -80,6 +92,6 @@ func IndexNameCommon(service, model string) string {
 	return INDEX_PREFIX + service + "-" + model + "*"
 }
 
-//func IndexAlias(service, model string) string {
-//	return ALIAS_PREFIX + service + "-" + model
-//}
+func IndexServiceName(service string) string {
+	return INDEX_PREFIX + service + "*"
+}

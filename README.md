@@ -7,14 +7,14 @@
 数据格式要求json,要求只有一层,对key如下规范：
 - service,必须字段，标识服务
 - model：必须字段，区分不同类型metric
-- @timestamp:必须字段，时间戳,格式"2019-01-01T01:00:00Z"
-- FILTER_xxx:自定义字段，用于筛选，xxx可以自定义，要求多余一个
+- @timestamp:必须字段，时间戳,格式"2019-01-01T01:00:00+08:00"
+- TAG_xxx:自定义字段，用于筛选，xxx可以自定义，要求多余一个,如果需要定义source-type,flavor等字段，建议将TAG统一设置为TAG_source_type, TAG_flavor,TAG_region,TAG_az,TAG_host,TAG_user,我们会设置这些tag之间的级联关系
 - METRIC_xxx:用于计数,可以多余一个
 
 示例：
 ```
-{"service":"mysql", "model":"user-stats", "@timestamp":"", "FILTER_region":"hb", "FILTER_pin":"11111", "METRIC_qps":10}
-{"service":"mysql", "model":"resouce-stats", "@timestamp":"", "FILTER_region":"hb", "FILTER_pin":"11111", "METRIC_cpu":10}
+{"service":"mysql", "model":"user-stats", "@timestamp":"", "TAG_region":"hb", "TAG_pin":"11111", "METRIC_qps":10}
+{"service":"mysql", "model":"resouce-stats", "@timestamp":"", "TAG_region":"hb", "TAG_pin":"11111", "SUM_METRIC_cpu":10}
 ```
 ## 1.2 es索引
 
@@ -22,7 +22,7 @@ index名字,xxxx为年月,按照年月进行切分
 - grafana--{service}-{model}-xxxx
 
 index mapping  
-- FILTER_xxx自动创建为keyword
+- TAG_xxx自动创建为keyword
 - METRIC_xxx自动创建为long
 
 index template:创建index时的schema
@@ -38,8 +38,13 @@ index template:创建index时的schema
 ## 2.1 绘制graph规则
 
 - @timestamp作为横轴。  
-- FILTER_xxx: 绘制成下拉框，用于选择。   
-- METRIC_xxx: 会变成纵轴的值，多个METRIC_xxx会做成多个panel。  
+- TAG_xxx: 绘制成下拉框，用于选择, 支持TAG_xxx排序和搜索级联. 
+   - 使用main/es2grafana.go的tagsSorts和tagsCascade参数分别设置tag的排序和搜索级联
+- METRIC_xxx: 会变成纵轴的值，根据不同的定义方式， 多个METRIC_xxx或一个METRIC_xxx可以组成一个panel。
+   - 以METRIC_开头的metric聚合方式为Average
+   - 以SUM_METRIC_开头的metric聚合方式为sum
+- 支持两种panel类型：graph和heatmap，默认为graph. 
+   - 使用main/es2grafana.go中的mypanel参数来自定义panel
 
 # 3. 架构推荐
 ```
@@ -60,7 +65,7 @@ export ESDOMAIN=localhost:9200
 ./template.sh
 
 #index document
-./es-store -es='http://localhost:9200' -doc='{"service":"mysql","model":"qps","@timestamp":"2019-05-20T10:00:00Z","FILTER_region":"china","FILTER_user":"Tom", "METRIC_qps":100, "METRIC_bill":10}' 
+./es-store -es='http://localhost:9200' -doc='{"service":"mysql","model":"qps","@timestamp":"2019-05-20T10:00:00Z","TAG_region":"china","TAG_user":"Tom", "METRIC_qps":100, "METRIC_bill":10}' 
 
 #generate grafana graph
 ./es2grafana -es='http://localhost:9200' -service='mysql' -model='qps' -grafana='http://localhost:3000' -key='admin:biliucheng'

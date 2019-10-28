@@ -20,7 +20,7 @@ func main() {
 	doc := flag.String("doc",
 		`{"service":"mysql","model":"aa",
 	"@timestamp":"2019-05-20T10:00:00Z",
-	"FILTER_db":"dbx", "METRIC_qps":100}`,
+	"TAG_db":"dbx", "METRIC_qps":100}`,
 		"doc")
 	flag.Parse()
 

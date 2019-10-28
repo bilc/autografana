@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ESDOMAIN=${ESDOMAIN-locahost:9200}
+ESDOMAIN=${ESDOMAIN-localhost:9200}
 curl -XPUT "http://${ESDOMAIN}/_template/grafana-template" -H 'Content-Type: application/json' -d'
 {
     "index_patterns":["grafana--*"],
@@ -17,8 +17,8 @@ curl -XPUT "http://${ESDOMAIN}/_template/grafana-template" -H 'Content-Type: app
             },
             "dynamic_templates": [
                 {
-                    "match_filter":{
-                        "match":"FILTER_*",
+                    "match_tag":{
+                        "match":"TAG_*",
                         "mapping": {
                             "type": "keyword"
                         }
