@@ -15,13 +15,13 @@ import (
 )
 
 func main() {
-	es := flag.String("es", "http://10.226.134.46:9200", "es url")
-	esHasAuth := flag.String("esauth", "http://10.226.134.46:9200", "es has auth url")
-	user := flag.String("user", "jvessel", "es user")
-	password := flag.String("password", "jvessel-es", "es password")
-	service := flag.String("service", "smoke", "es index field service")
-	model := flag.String("model", "es", "es index field model")
-	grafana := flag.String("grafana", "http://10.226.134.46:3000", "grafana url")
+	es := flag.String("es", "http://127.0.0.1:9200", "es url")
+	esHasAuth := flag.String("esauth", "http://127.0.0.1:9200", "es has auth url")
+	user := flag.String("user", "tom", "es user")
+	password := flag.String("password", "tom", "es password")
+	service := flag.String("service", "mysql", "es index field service")
+	model := flag.String("model", "user-stats", "es index field model")
+	grafana := flag.String("grafana", "http://127.0.0.1:3000", "grafana url")
 	key := flag.String("key", "admin", "grafana api key")
 	flag.Parse()
 
