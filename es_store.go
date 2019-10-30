@@ -19,14 +19,16 @@ import (
 	//elastic "gopkg.in/olivere/elastic.v6"
 )
 
-var INDEX_PREFIX string = "jvessel-grafana-"
-//var INDEX_PREFIX string = "grafana--"
+//var INDEX_PREFIX string = "jvessel-grafana-"
+var INDEX_PREFIX string = "grafana--"
 var ALIAS_PREFIX string = "graf-alias--"
 
 var FIELD_SERVICE string = "service"
 var FIELD_MODEL string = "model"
 var FIELD_TIMESTAMP string = "@timestamp"
 var FIELD_TAG_PREFIX string = "TAG_"
+var FIELD_GRAPH_PREFIX string = "GRAPH_"
+var FIELD_HEATPMAP_PREFIX string = "HEATMAP_"
 var FIELD_METRIC_PREFIX string = "METRIC_"
 var FIELD_SUM_METRIC_PREFIX string = "SUM_METRIC_"
 

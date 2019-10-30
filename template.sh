@@ -4,9 +4,11 @@ ESDOMAIN=${ESDOMAIN-localhost:9200}
 curl -XPUT "http://${ESDOMAIN}/_template/grafana-template" -H 'Content-Type: application/json' -d'
 {
     "index_patterns":["grafana--*"],
-    "settings": {
-        "number_of_shards":1,
-        "number_of_replicas":1
+    "settings" : {
+      "index" : {
+        "number_of_shards" : "1",
+        "number_of_replicas" : "1"
+      }
     },
     "mappings": {
         "_doc":{
@@ -30,6 +32,38 @@ curl -XPUT "http://${ESDOMAIN}/_template/grafana-template" -H 'Content-Type: app
                         "mapping": {
                             "type": "long"
                         }
+                    }
+                },
+                {
+                    "match_number" : {
+                        "match" : "SUM_METRIC_*",
+                        "mapping" : {
+                            "type" : "long"
+                         }
+                    }
+                },
+                {
+                    "match_number" : {
+                        "match" : "GRAPH_METRIC_*",
+                        "mapping" : {
+                            "type" : "long"
+                         }
+                    }
+                },
+                {
+                    "match_number" : {
+                        "match" : "GRAPH_SUM_METRIC_*",
+                        "mapping" : {
+                            "type" : "long"
+                         }
+                    }
+                },
+                {
+                    "match_number" : {
+                        "match" : "HEATMAP_METRIC_*",
+                        "mapping" : {
+                            "type" : "long"
+                         }
                     }
                 },
                 {

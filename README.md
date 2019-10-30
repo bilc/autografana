@@ -9,7 +9,10 @@
 - model：必须字段，区分不同类型metric
 - @timestamp:必须字段，时间戳,格式"2019-01-01T01:00:00+08:00"
 - TAG_xxx:自定义字段，用于筛选，xxx可以自定义，要求多余一个
-- METRIC_xxx:用于计数,可以多余一个
+- xxx_METRIC_xxx:表示监控指标,可以多余一个,一共有以下几种格式
+   - METRIC_xxx/GRAPH_METRIC_xxx:表示该metric生成graph类型的panel，并且metric的聚合方式为avg
+   - SUM_METRIC_xxx/GRAPH_SUM_METRIC_xxx:表示该metric生成graph类型的panel，并且metric的聚合方式为sum
+   - HEATMAP_METRIC_xxx:表示该metric生成heatpmap类型的panel，默认metric的聚合方式为max
 
 示例：
 ```
@@ -23,7 +26,7 @@ index名字,xxxx为年月,按照年月进行切分
 
 index mapping  
 - TAG_xxx自动创建为keyword
-- METRIC_xxx自动创建为long
+- xxx_METRIC_xxx自动创建为long
 
 index template:创建index时的schema
 - [template.sh](./template.sh)
@@ -44,7 +47,14 @@ index template:创建index时的schema
    - 以METRIC_开头的metric聚合方式为Average
    - 以SUM_METRIC_开头的metric聚合方式为sum
 - 支持两种panel类型：graph和heatmap，默认为graph. 
-   - 使用main/es2grafana.go中的mypanel参数来自定义panel
+   - 以METRIC_或GRAPH_METRIC_开头的metric会生成graph类型的panel
+   - 以HEATMAP_METRIC_开头的metric会生成heatmap类型的panel
+   - 默认情况下，有相同前缀的METRIC会合并到一个panel中
+       eg: METRIC_bill_current/GRAPH_METRIC_bill_current和METRIC_bill_total/GRAPH_METRIC_bill_total会放置在title为bill的同一个panel里
+           HEATMAP_qps_current和HEATMAP_qps_total会放置在title为qps的同一个panel里
+   - 如果想定制panel中的metric, 需要指定Es2Grafana中的myPanels参数
+
+
 
 # 3. 架构推荐
 ```

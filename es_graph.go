@@ -15,8 +15,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"strings"
 	"strconv"
+	"strings"
 
 	sdk "github.com/bilc/grafana-sdk"
 	"github.com/olivere/elastic"
@@ -25,22 +25,22 @@ import (
 
 const PANEL_GRAPH = "graph"
 const PAENL_HEATMAP = "heatmap"
-const METRIC_INTERVAL= "interval"
+const METRIC_INTERVAL = "interval"
 
 type MyPanel struct {
-	Title string `json:"title"`
-	Metrics []string `json:"metrics"`
-	Type string `json:"type"` // panel type: graph, heatmap
-	Interval string `json:"interval"`
+	Title    string   `json:"title"`
+	Metrics  []string `json:"metrics"`
+	Type     string   `json:"type"` // panel type: graph, heatmap
+	Interval string   `json:"interval"`
 }
 
 type MyMetric struct {
 	Field string `json:"field"`
-	Type string `json:"type"` //metric type: sum, avg, count...
+	Type  string `json:"type"` //metric type: sum, avg, count...
 }
 
 func Es2Grafana(esUrl, esUrlNoAuth, esUser, esPassword, service, model string, grafanaUrl string, grafanaApiKey string,
-	gratags, tagsSorts []string, tagsCascade map[string][]string, panels []MyPanel) (string, error ){
+	gratags, tagsSorts []string, tagsCascade map[string][]string, myPanels []MyPanel) (string, error) {
 
 	ExpectTagsSort = tagsSorts
 	index := IndexNameCommon(service, model)
@@ -67,7 +67,7 @@ func Es2Grafana(esUrl, esUrlNoAuth, esUser, esPassword, service, model string, g
 	grafanaCli := sdk.NewClient(grafanaUrl, grafanaApiKey, sdk.DefaultHTTPClient)
 
 	folderUid, err := GetFolderUid(grafanaUrl, grafanaApiKey, service)
-	if err != nil{
+	if err != nil {
 		return "", fmt.Errorf("get folder uid err %v", err)
 	}
 
@@ -84,7 +84,7 @@ func Es2Grafana(esUrl, esUrlNoAuth, esUser, esPassword, service, model string, g
 	}
 	b, _ := json.Marshal(status)
 	fmt.Println("---datasource: ", string(b))
-	dashboard := NewGraphBoard(index, tags, tagsCascade, metrics, panels, model)
+	dashboard := NewGraphBoard(index, tags, tagsCascade, metrics, myPanels, model)
 	b, _ = json.Marshal(dashboard)
 	fmt.Println("---dashboard: ", string(b))
 
@@ -96,74 +96,74 @@ func Es2Grafana(esUrl, esUrlNoAuth, esUser, esPassword, service, model string, g
 	}
 
 	url, err := GetDashboardUrl(grafanaUrl, grafanaApiKey, service, model)
-	if err != nil{
+	if err != nil {
 		return "", fmt.Errorf("getDashboardUrlByFolder err %s", err)
 	}
 
 	return url, nil
 }
 
-func GetDashboardUrl(grafanaUrl, grafanaApiKey, service, model string) (string,error) {
+func GetDashboardUrl(grafanaUrl, grafanaApiKey, service, model string) (string, error) {
 	grafanaCli := sdk.NewClient(grafanaUrl, grafanaApiKey, sdk.DefaultHTTPClient)
 	folderUid, err := GetFolderUid(grafanaUrl, grafanaApiKey, service)
-	if err != nil{
+	if err != nil {
 		return "", fmt.Errorf("get folder uid err %v", err)
 	}
 
 	folderResp, err := grafanaCli.GetFolder(folderUid)
-	if err != nil{
+	if err != nil {
 		return "", fmt.Errorf("get folders err %v", err)
 	}
 
-	folders,err := grafanaCli.SearchFolders(folderResp.ID)
-	if err != nil{
+	folders, err := grafanaCli.SearchFolders(folderResp.ID)
+	if err != nil {
 		return "", fmt.Errorf("search folders err %v", err)
 	}
-	for _, dashboard := range folders{
-		if dashboard.Title == model{
+	for _, dashboard := range folders {
+		if dashboard.Title == model {
 			return dashboard.URL, nil
 		}
 	}
 	return "", nil
 }
 
-func GetAllDashboardInFolder(grafanaUrl, grafanaApiKey, service string) ([]sdk.FoundFolder, error){
+func GetAllDashboardInFolder(grafanaUrl, grafanaApiKey, service string) ([]sdk.FoundFolder, error) {
 	grafanaCli := sdk.NewClient(grafanaUrl, grafanaApiKey, sdk.DefaultHTTPClient)
 	folderUid, err := GetFolderUid(grafanaUrl, grafanaApiKey, service)
-	if err != nil || folderUid == ""{
+	if err != nil || folderUid == "" {
 		return nil, fmt.Errorf("get folder uid err[%v] or folder[%s] not exist ", err, service)
 	}
 	folderResp, err := grafanaCli.GetFolder(folderUid)
-	if err != nil{
+	if err != nil {
 		return nil, fmt.Errorf("get folders err %v", err)
 	}
 
-	folders,err := grafanaCli.SearchFolders(folderResp.ID)
-	if err != nil{
+	folders, err := grafanaCli.SearchFolders(folderResp.ID)
+	if err != nil {
 		return nil, fmt.Errorf("search folders err %v", err)
 	}
 	return folders, nil
 }
 
-func GetFolderUid(grafanaUrl, grafanaApiKey, folderTitle string) (string, error){
+func GetFolderUid(grafanaUrl, grafanaApiKey, folderTitle string) (string, error) {
 	grafanaCli := sdk.NewClient(grafanaUrl, grafanaApiKey, sdk.DefaultHTTPClient)
 	allFolders, err := grafanaCli.SearchFolders(0)
-	if err != nil{
+	if err != nil {
 		return "", fmt.Errorf("list folders err %v", err)
 	}
 
-	for _ , folder := range allFolders{
-		if folder.Title == folderTitle{
+	for _, folder := range allFolders {
+		if folder.Title == folderTitle {
 			return folder.UID, nil
 		}
 	}
 	return "", nil
 }
 
-func ListFolders(grafanaUrl, grafanaApiKey string) ([]sdk.FoundFolder, error){
+func ListFolders(grafanaUrl, grafanaApiKey string) ([]sdk.FoundFolder, error) {
 	grafanaCli := sdk.NewClient(grafanaUrl, grafanaApiKey, sdk.DefaultHTTPClient)
 	allFolders, err := grafanaCli.SearchFolders(0)
-	if err != nil{
+	if err != nil {
 		return nil, fmt.Errorf("list folders err %v", err)
 	}
 	return allFolders, err
@@ -240,7 +240,8 @@ func ExtractEs(esUrl, index string) ([]string, []string, error) {
 		for field := range tmp {
 			if strings.HasPrefix(field, FIELD_TAG_PREFIX) {
 				tags = append(tags, field)
-			} else if strings.HasPrefix(field, FIELD_METRIC_PREFIX) || strings.HasPrefix(field, FIELD_SUM_METRIC_PREFIX)  {
+			} else if strings.HasPrefix(field, FIELD_METRIC_PREFIX) || strings.HasPrefix(field, FIELD_SUM_METRIC_PREFIX) ||
+				strings.HasPrefix(field, FIELD_GRAPH_PREFIX) || strings.HasPrefix(field, FIELD_HEATPMAP_PREFIX) {
 				metrics = append(metrics, field)
 			}
 		}
@@ -251,22 +252,22 @@ func ExtractEs(esUrl, index string) ([]string, []string, error) {
 	return tags, metrics, nil
 }
 
-func NewEsDataSource(esUrl string, db string, user,password string) sdk.Datasource {
+func NewEsDataSource(esUrl string, db string, user, password string) sdk.Datasource {
 	//	jsonData
 	//	esVersion: 60
 	//keepCookies: []
 	//timeField: "@timestamp"
 	tmp := true
 	ds := sdk.Datasource{
-		Access:    "proxy",
-		BasicAuth: &tmp,
-		BasicAuthUser: &user,
+		Access:            "proxy",
+		BasicAuth:         &tmp,
+		BasicAuthUser:     &user,
 		BasicAuthPassword: &password,
-		Name:      db,
-		Database:  &db,
-		URL:       esUrl,
-		Type:      "elasticsearch",
-		JSONData:  map[string]interface{}{"esVersion": "60", "timeField": "@timestamp", "keepCookies": []string{}},
+		Name:              db,
+		Database:          &db,
+		URL:               esUrl,
+		Type:              "elasticsearch",
+		JSONData:          map[string]interface{}{"esVersion": "60", "timeField": "@timestamp", "keepCookies": []string{}},
 	}
 	return ds
 }
@@ -319,17 +320,91 @@ func NewGraphBoard(myDataSource string, mytags []string, mytagsCascade map[strin
 	//panelb, _ := json.Marshal(board.Panels[0])
 	//	panelVar := *board.Panels[0]
 	board.Panels = board.Panels[0:0]
-	for index, myPanel :=  range myPanels{
-		var panel *sdk.Panel
-		if myPanel.Type == PANEL_GRAPH{
-			panel = NewGraphPanel(myDataSource, myID, index, myPanel.Title, myPanel.Interval, myPanel.Metrics, luceneQuery)
-		}else if myPanel.Type == PAENL_HEATMAP{
-			panel = NewHeatmapPanel(myDataSource, myID,index, myPanel.Title, myPanel.Interval, myPanel.Metrics, luceneQuery)
+	var panel *sdk.Panel
+	if myPanels == nil {
+		graphMetricsMap, heatmapMetricsMap := splitMetrics(myMetrics)
+		index := 0
+		for title, metrics := range graphMetricsMap {
+			panel = NewGraphPanel(myDataSource, myID, index, title, "10s", metrics, luceneQuery)
+			myID += 1
+			board.Panels = append(board.Panels, panel)
+			index++
 		}
-		myID += 1
-		board.Panels = append(board.Panels, panel)
+		for title, metrics := range heatmapMetricsMap {
+			panel = NewHeatmapPanel(myDataSource, myID, index, title, "10s", metrics, luceneQuery)
+			myID += 1
+			board.Panels = append(board.Panels, panel)
+			index++
+		}
+
+	} else {
+		for index, myPanel := range myPanels {
+			if myPanel.Type == PANEL_GRAPH {
+				panel = NewGraphPanel(myDataSource, myID, index, myPanel.Title, myPanel.Interval, myPanel.Metrics, luceneQuery)
+			} else if myPanel.Type == PAENL_HEATMAP {
+				panel = NewHeatmapPanel(myDataSource, myID, index, myPanel.Title, myPanel.Interval, myPanel.Metrics, luceneQuery)
+			}
+			myID += 1
+			board.Panels = append(board.Panels, panel)
+		}
 	}
 	return &board
+}
+
+func splitMetrics(metrics []string) (graphResult, heatmapResult map[string][]string) {
+	graphResult = map[string][]string{}
+	heatmapResult = map[string][]string{}
+	var graphMetric, heatpmapMetric string
+	for _, metric := range metrics {
+		if strings.HasPrefix(metric, FIELD_HEATPMAP_PREFIX) {
+			heatpmapMetric = splitMetricSuffix(splitMetricPrefix(splitPanelTypePrefix(metric)))
+			if heatpmapMetric == "" {
+				heatmapResult[splitPanelTypePrefix(metric)] = append(heatmapResult[splitPanelTypePrefix(metric)], metric)
+			} else {
+				heatmapResult[heatpmapMetric] = append(heatmapResult[heatpmapMetric], metric)
+			}
+		} else {
+			graphMetric = splitMetricSuffix(splitMetricPrefix(splitPanelTypePrefix(metric)))
+			if graphMetric == "" {
+				graphResult[splitPanelTypePrefix(metric)] = append(graphResult[splitPanelTypePrefix(metric)], metric)
+			} else {
+				graphResult[graphMetric] = append(graphResult[graphMetric], metric)
+			}
+		}
+	}
+	return
+}
+
+var splitMetricSuffix = func(metric string) (result string) {
+	index := strings.LastIndex(metric, "_")
+	if index == -1 {
+		result = ""
+	} else {
+		result = metric[:index]
+	}
+	return
+}
+
+var splitPanelTypePrefix = func(metric string) (result string) {
+	if strings.HasPrefix(metric, FIELD_HEATPMAP_PREFIX) {
+		result = strings.TrimPrefix(metric, FIELD_HEATPMAP_PREFIX)
+	} else if strings.HasPrefix(metric, FIELD_GRAPH_PREFIX) {
+		result = strings.TrimPrefix(metric, FIELD_GRAPH_PREFIX)
+	} else {
+		result = metric
+	}
+	return
+}
+
+var splitMetricPrefix = func(metric string) (result string) {
+	if strings.HasPrefix(metric, FIELD_METRIC_PREFIX) {
+		result = strings.TrimPrefix(metric, FIELD_METRIC_PREFIX)
+	} else if strings.HasPrefix(metric, FIELD_SUM_METRIC_PREFIX) {
+		result = strings.TrimPrefix(metric, FIELD_SUM_METRIC_PREFIX)
+	} else {
+		result = metric
+	}
+	return
 }
 
 type TemplateVars []sdk.TemplateVar
@@ -355,7 +430,7 @@ func getExistTags(tags, mytags []string) []string {
 	return existTag
 }
 
-func isExist(name string, arrays []string) bool {
+func isExistInArray(name string, arrays []string) bool {
 	for _, arr := range arrays {
 		if arr == name {
 			return true
@@ -411,18 +486,18 @@ func NewGraphPanel(myDataSource string, panelId uint, panelIndex int, panelTile,
 	graphPanel.GraphPanel.Targets[0].BucketAggs[0].Settings.Interval = panelInterval
 
 	metrics := make([]sdk.Metric, len(myMetrics))
-	for i, metric := range myMetrics{
+	for i, metric := range myMetrics {
 		metrics[i].ID = strconv.Itoa(i)
 		metrics[i].Field = metric
 		metrics[i].Type = getMetricType(metric)
-		metrics[i].Meta = struct {}{}
-		metrics[i].Settings = struct {}{}
+		metrics[i].Meta = struct{}{}
+		metrics[i].Settings = struct{}{}
 	}
 	graphPanel.GraphPanel.Targets[0].Metrics = metrics
 	return &graphPanel
 }
 
-func NewHeatmapPanel(myDataSource string, panelId uint, panelIndex int, panelTile, panelInterval string,  myMetrics []string, luceneQuery string) *sdk.Panel {
+func NewHeatmapPanel(myDataSource string, panelId uint, panelIndex int, panelTile, panelInterval string, myMetrics []string, luceneQuery string) *sdk.Panel {
 	var heatmapPanel sdk.Panel
 	err := json.Unmarshal([]byte(heatmap_panel_json), &heatmapPanel)
 	if err != nil {
@@ -440,24 +515,22 @@ func NewHeatmapPanel(myDataSource string, panelId uint, panelIndex int, panelTil
 	heatmapPanel.HeatmapPanel.Targets[0].BucketAggs[0].Settings.Interval = panelInterval
 
 	metrics := make([]sdk.Metric, len(myMetrics))
-	for i, metric := range myMetrics{
+	for i, metric := range myMetrics {
 		metrics[i].ID = strconv.Itoa(i)
 		metrics[i].Field = metric
-		metrics[i].Type = getMetricType(metric)
-		metrics[i].Meta = struct {}{}
-		metrics[i].Settings = struct {}{}
+		metrics[i].Type = "max"
+		metrics[i].Meta = struct{}{}
+		metrics[i].Settings = struct{}{}
 	}
 	heatmapPanel.HeatmapPanel.Targets[0].Metrics = metrics
 	return &heatmapPanel
 }
 
 var getMetricType = func(metric string) (mType string) {
-	if strings.HasPrefix(metric, FIELD_SUM_METRIC_PREFIX){
+	if strings.HasPrefix(metric, FIELD_SUM_METRIC_PREFIX) {
 		mType = "sum"
-	}else{
+	} else {
 		mType = "avg"
 	}
 	return
 }
-
-

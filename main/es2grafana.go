@@ -30,7 +30,7 @@ func main() {
 	//key := "eyJrIjoiNnBoZHJ3ODFGM3pxMjZmeU9qdGZjN05KYzRnT0Z3MXUiLCJuIjoiQWRtaW4iLCJpZCI6MX0="
 
 	flag.Parse()
-	mypanel := []autografana.MyPanel{
+	/*mypanel := []autografana.MyPanel{
 		{
 			Title: "bill used",
 			Metrics: []string{"SUM_METRIC_bill_current", "SUM_METRIC_bill_total"},
@@ -42,23 +42,16 @@ func main() {
 			Type: autografana.PAENL_HEATMAP,
 			Interval: "20s",
 		},
-	}
+	}*/
 
-	tagsSorts := []string{"TAG_region", "TAG_az", "TAG_flavor","TAG_kind","TAG_resource_name","TAG_release","TAG_pin", "TAG_instance_id"}
-	tagsCascade := make(map[string][]string)
-	tagsCascade["TAG_az"] = []string{"TAG_region"}
-	tagsCascade["TAG_resource_name"] = []string{"TAG_instance_id"}
-	tagsCascade["TAG_instance_id"] = []string{"TAG_pin","TAG_az","TAG_flavor", "TAG_release"}
-
-	url, err := autografana.Es2Grafana(*es, *esHasAuth, *user, *password, *service, *model, *grafana, key, nil, tagsSorts, tagsCascade, mypanel)
+	url, err := autografana.Es2Grafana(*es, *esHasAuth, *user, *password, *service, *model, *grafana, key, nil, nil, nil, nil)
 	fmt.Println(url, err)
 
-	allfolder, err := autografana.ListFolders(*grafana, key)
-	fmt.Printf("all folder: %+v",allfolder)
-	fmt.Println(err)
+	/*allfolder, err := autografana.ListFolders(*grafana, key)
+	fmt.Printf("all folder: %+v", allfolder)
 
 	uid, err := autografana.GetFolderUid(*grafana, key, "es")
-	fmt.Printf("es uid is %+s",uid)
+	fmt.Printf("es uid is %+s", uid)
 
 	esfolder, err := autografana.GetAllDashboardInFolder(*grafana, key, "es")
 	fmt.Printf("es folder: %+v", esfolder)
@@ -75,5 +68,5 @@ func main() {
 	autografana.SortTemplatingList(temp)
 	for _, t := range temp {
 		fmt.Println(t)
-	}
+	}*/
 }
