@@ -44,7 +44,7 @@ curl -XPUT "http://${ESDOMAIN}/_template/grafana-template" -H 'Content-Type: app
                 },
                 {
                     "match_number" : {
-                        "match" : "GRAPH_METRIC_*",
+                        "match" : "AVG-GRAPH_*",
                         "mapping" : {
                             "type" : "long"
                          }
@@ -52,7 +52,7 @@ curl -XPUT "http://${ESDOMAIN}/_template/grafana-template" -H 'Content-Type: app
                 },
                 {
                     "match_number" : {
-                        "match" : "GRAPH_SUM_METRIC_*",
+                        "match" : "SUM-GRAPH_*",
                         "mapping" : {
                             "type" : "long"
                          }
@@ -60,7 +60,7 @@ curl -XPUT "http://${ESDOMAIN}/_template/grafana-template" -H 'Content-Type: app
                 },
                 {
                     "match_number" : {
-                        "match" : "HEATMAP_METRIC_*",
+                        "match" : "HEATMAP_*",
                         "mapping" : {
                             "type" : "long"
                          }

@@ -241,7 +241,8 @@ func ExtractEs(esUrl, index string) ([]string, []string, error) {
 			if strings.HasPrefix(field, FIELD_TAG_PREFIX) {
 				tags = append(tags, field)
 			} else if strings.HasPrefix(field, FIELD_METRIC_PREFIX) || strings.HasPrefix(field, FIELD_SUM_METRIC_PREFIX) ||
-				strings.HasPrefix(field, FIELD_GRAPH_PREFIX) || strings.HasPrefix(field, FIELD_HEATPMAP_PREFIX) {
+				strings.HasPrefix(field, FIELD_AVG_GRAPH_PREFIX) || strings.HasPrefix(field, FIELD_SUM_GRAPH_PREFIX) ||
+				strings.HasPrefix(field, FIELD_HEATPMAP_PREFIX) {
 				metrics = append(metrics, field)
 			}
 		}
@@ -253,10 +254,6 @@ func ExtractEs(esUrl, index string) ([]string, []string, error) {
 }
 
 func NewEsDataSource(esUrl string, db string, user, password string) sdk.Datasource {
-	//	jsonData
-	//	esVersion: 60
-	//keepCookies: []
-	//timeField: "@timestamp"
 	tmp := true
 	ds := sdk.Datasource{
 		Access:            "proxy",
@@ -356,21 +353,33 @@ func splitMetrics(metrics []string) (graphResult, heatmapResult map[string][]str
 	heatmapResult = map[string][]string{}
 	var graphMetric, heatpmapMetric string
 	for _, metric := range metrics {
-		if strings.HasPrefix(metric, FIELD_HEATPMAP_PREFIX) {
-			heatpmapMetric = splitMetricSuffix(splitMetricPrefix(splitPanelTypePrefix(metric)))
+		unifyMetric := transformToUnify(metric)
+		if strings.HasPrefix(unifyMetric, FIELD_HEATPMAP_PREFIX) {
+			heatpmapMetric = splitMetricSuffix(splitPanelTypePrefix(unifyMetric))
 			if heatpmapMetric == "" {
-				heatmapResult[splitPanelTypePrefix(metric)] = append(heatmapResult[splitPanelTypePrefix(metric)], metric)
+				heatmapResult[metric] = append(heatmapResult[metric], metric)
 			} else {
 				heatmapResult[heatpmapMetric] = append(heatmapResult[heatpmapMetric], metric)
 			}
 		} else {
-			graphMetric = splitMetricSuffix(splitMetricPrefix(splitPanelTypePrefix(metric)))
+			graphMetric = splitMetricSuffix(splitPanelTypePrefix(unifyMetric))
 			if graphMetric == "" {
-				graphResult[splitPanelTypePrefix(metric)] = append(graphResult[splitPanelTypePrefix(metric)], metric)
+				graphResult[metric] = append(graphResult[metric], metric)
 			} else {
 				graphResult[graphMetric] = append(graphResult[graphMetric], metric)
 			}
 		}
+	}
+	return
+}
+
+var transformToUnify = func(metric string) (result string){
+	if strings.HasPrefix(metric, FIELD_METRIC_PREFIX){
+		result = FIELD_AVG_GRAPH_PREFIX + strings.TrimPrefix(metric, FIELD_METRIC_PREFIX)
+	}else if strings.HasPrefix(metric, FIELD_SUM_METRIC_PREFIX){
+		result = FIELD_SUM_GRAPH_PREFIX + strings.TrimPrefix(metric, FIELD_SUM_METRIC_PREFIX)
+	}else{
+		result = metric
 	}
 	return
 }
@@ -385,25 +394,9 @@ var splitMetricSuffix = func(metric string) (result string) {
 	return
 }
 
-var splitPanelTypePrefix = func(metric string) (result string) {
-	if strings.HasPrefix(metric, FIELD_HEATPMAP_PREFIX) {
-		result = strings.TrimPrefix(metric, FIELD_HEATPMAP_PREFIX)
-	} else if strings.HasPrefix(metric, FIELD_GRAPH_PREFIX) {
-		result = strings.TrimPrefix(metric, FIELD_GRAPH_PREFIX)
-	} else {
-		result = metric
-	}
-	return
-}
-
-var splitMetricPrefix = func(metric string) (result string) {
-	if strings.HasPrefix(metric, FIELD_METRIC_PREFIX) {
-		result = strings.TrimPrefix(metric, FIELD_METRIC_PREFIX)
-	} else if strings.HasPrefix(metric, FIELD_SUM_METRIC_PREFIX) {
-		result = strings.TrimPrefix(metric, FIELD_SUM_METRIC_PREFIX)
-	} else {
-		result = metric
-	}
+var splitPanelTypePrefix = func (metric string) (result string){
+	index := strings.Index(metric, "_")
+	result = metric[index+1:]
 	return
 }
 
@@ -513,6 +506,10 @@ func NewHeatmapPanel(myDataSource string, panelId uint, panelIndex int, panelTil
 
 	heatmapPanel.HeatmapPanel.Targets[0].Query = luceneQuery
 	heatmapPanel.HeatmapPanel.Targets[0].BucketAggs[0].Settings.Interval = panelInterval
+	if len(myMetrics) > 1 {
+		heatmapPanel.HeatmapPanel.DataFormat = "tsbuckets"
+		heatmapPanel.HeatmapPanel.Legend.Show = true
+	}
 
 	metrics := make([]sdk.Metric, len(myMetrics))
 	for i, metric := range myMetrics {
@@ -527,7 +524,7 @@ func NewHeatmapPanel(myDataSource string, panelId uint, panelIndex int, panelTil
 }
 
 var getMetricType = func(metric string) (mType string) {
-	if strings.HasPrefix(metric, FIELD_SUM_METRIC_PREFIX) {
+	if strings.HasPrefix(metric, FIELD_SUM_METRIC_PREFIX) || strings.HasPrefix(metric, FIELD_SUM_GRAPH_PREFIX) {
 		mType = "sum"
 	} else {
 		mType = "avg"

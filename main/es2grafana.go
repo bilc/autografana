@@ -22,7 +22,7 @@ func main() {
 	service := flag.String("service", "mysql", "es index field service")
 	model := flag.String("model", "user-stats", "es index field model")
 	grafana := flag.String("grafana", "http://127.0.0.1:3000", "grafana url")
-	key := flag.String("key", "admin", "grafana api key")
+	key := flag.String("key", "eyJrIjoiSk5ybDV5Tlp6YkZoQU0wUEZmaktHVE52MllVN1oyR0wiLCJuIjoiYWRtaW4iLCJpZCI6MX0=", "grafana api key")
 	flag.Parse()
 
 	/*mypanel := []autografana.MyPanel{
@@ -39,6 +39,6 @@ func main() {
 		},
 	}*/
 
-	url, err := autografana.Es2Grafana(*es, *esHasAuth, *user, *password, *service, *model, *grafana, key, nil, nil, nil, nil)
+	url, err := autografana.Es2Grafana(*es, *esHasAuth, *user, *password, *service, *model, *grafana, *key, nil, nil, nil, nil)
 	fmt.Println(url, err)
 }

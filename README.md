@@ -9,16 +9,13 @@
 - model：必须字段，区分不同类型metric
 - @timestamp:必须字段，时间戳,格式"2019-01-01T01:00:00+08:00"
 - TAG_xxx:自定义字段，用于筛选，xxx可以自定义，要求多余一个
-- xxx_METRIC_xxx:表示panel中的监控指标,可以多余一个,一共可以定义以下几种格式
-   - METRIC_xxx/GRAPH_METRIC_xxx:表示该metric生成graph类型的panel，并且metric的聚合方式为avg
-   - SUM_METRIC_xxx/GRAPH_SUM_METRIC_xxx:表示该metric生成graph类型的panel，并且metric的聚合方式为sum
-   - HEATMAP_METRIC_xxx:表示该metric生成heatpmap类型的panel，默认metric的聚合方式为max
+- AVG-GRAPH_xxx/SUM-GRAPH_xxx/HEATMAP_xxx:用于计数,可以多余一个
 
 示例：
 ```
-{"service":"mysql", "model":"user-stats", "@timestamp":"", "TAG_region":"hb", "TAG_user":"tom", "SUM_METRIC_bill_current":100, "SUM_METRIC_bill_total":6000, "HEATMAP_METRIC_qps_current":100, "HEATMAP_METRIC_qps_total":250}
+{"service":"mysql", "model":"user-stats", "@timestamp":"", "TAG_region":"hb", "TAG_user":"tom", "AVG-GRAPH_bill_current":100, "SUM-GRAPH_bill_total":6000, "HEATMAP_qps_current":100, "HEATMAP_qps_total":250}
 
-{"service":"mysql", "model":"resouce-stats", "@timestamp":"", "TAG_region":"hb", "TAG_user":"mary", "METRIC_cpu":10}
+{"service":"mysql", "model":"resouce-stats", "@timestamp":"", "TAG_region":"hb", "TAG_user":"jerry", "AVG-GRAPH_cpu":10}
 ```
 ## 1.2 es索引
 
@@ -27,7 +24,7 @@ index名字,xxxx为年月,按照年月进行切分
 
 index mapping  
 - TAG_xxx自动创建为keyword
-- xxx_METRIC_xxx自动创建为long
+- AVG-GRAPH_xxx/SUM-GRAPH_xxx/HEATMAP_xxx自动创建为long
 
 index template:创建index时的schema
 - [template.sh](./template.sh)
@@ -43,17 +40,14 @@ index template:创建index时的schema
 
 - @timestamp作为横轴。  
 - TAG_xxx: 绘制成下拉框，用于选择, 支持TAG_xxx排序和搜索级联. 
-- xxx_METRIC_xxx: 会变成纵轴的值
-   - 以METRIC_/GRAPH_METRIC_开头的metric聚合方式为Average
-   - 以SUM_METRIC_/GRAPH_SUM_METRIC_开头的metric聚合方式为sum
-- 支持两种panel类型：graph和heatmap
-   - 以METRIC_或GRAPH_METRIC_开头的metric会生成graph类型的panel
-   - 以HEATMAP_METRIC_开头的metric会生成heatmap类型的panel
-   - 默认情况下，有相同前缀的METRIC会合并到一个panel中,例如:
-      - METRIC_bill_current和METRIC_bill_total会放置在title为bill,类型为graph的同一个panel里
-      - HEATMAP_qps_current和HEATMAP_qps_total会放置在title为qps,类型为heatmap的同一个panel里
+- AVG-GRAPH_xxx/SUM-GRAPH_xxx/HEATMAP_xxx: 会变成纵轴的值
+   - AVG-GRAPH_xxx:表示该metric放置在graph类型的panel，并且metric的聚合方式为avg
+   - SUM-GRAPH_xxx:表示该metric放置在graph类型的panel，并且metric的聚合方式为sum
+   - HEATMAP_xxx:表示该metric放置在heatpmap类型的panel，默认metric的聚合方式为max
+   - 若xxx部分定义了相同前缀的多个metric，则默认会将这些metric放置在同一个panel中
+       - AVG-GRAPH_bill_current和AVG-GRAPH_bill_total会放置在title为bill,类型为graph的同一个panel里
+       - HEATMAP_qps_current和HEATMAP_qps_total会放置在title为qps,类型为heatmap的同一个panel里
    - 如果想定制panel中的metric, 需要指定Es2Grafana中的myPanels参数
-
 
 
 # 3. 架构推荐
@@ -75,7 +69,7 @@ export ESDOMAIN=localhost:9200
 ./template.sh
 
 #index document
-./es-store -es='http://localhost:9200' -doc='{"service":"mysql", "model":"user-stats", "@timestamp":"", "TAG_region":"hb", "TAG_user":"tom", "SUM_METRIC_bill_current":100, "SUM_METRIC_bill_total":6000, "HEATMAP_METRIC_qps_current":100, "HEATMAP_METRIC_qps_total":250}' 
+./es-store -es='http://localhost:9200' -doc='{"service":"mysql", "model":"user-stats", "@timestamp":"", "TAG_region":"hb", "TAG_user":"tom", "AVG-GRAPH_bill_current":100, "SUM-GRAPH_bill_total":6000, "HEATMAP_qps_current":100, "HEATMAP_qps_total":250}
 
 #generate grafana graph
 ./es2grafana -es='http://localhost:9200' -service='mysql' -model='user-stats' -grafana='http://localhost:3000' -key='admin:biliucheng'
