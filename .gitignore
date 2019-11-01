@@ -3,4 +3,5 @@ es2grafana
 es-store
 vendor/pkg/*
 metric*.sh
+main/test.go
 

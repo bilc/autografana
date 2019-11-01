@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+	"net/url"
+	"strconv"
 )
 
 type Folder struct {
@@ -63,4 +65,41 @@ func (r *Client) GetFolder(uid string) (resp FolderProperties, err error) {
 	}
 	err = json.Unmarshal(raw, &resp)
 	return resp, err
+}
+
+type FoundFolder struct {
+	Folderid    uint     `json:"folderId"`
+	FolderTitle string   `json:"folderTitle"`
+	FolderUid   string   `json:"folderUid"`
+	FolderUrl   string   `json:"folderUrl"`
+	Id          uint     `json:"id"`
+	IsStarred   bool     `json:"isStarred"`
+	Slug        string   `json:"slug"`
+	Tags        []string `json:"tags"`
+	Title       string   `json:"title"`
+	Type        string   `json:"type"`
+	UID         string   `json:"uid"`
+	URI         string   `json:"uri"`
+	URL         string   `json:"url"`
+}
+
+func (r *Client) SearchFolders(folderId int) ([]FoundFolder, error) {
+	var (
+		raw    []byte
+		folders []FoundFolder
+		code   int
+		err    error
+	)
+	u := url.URL{}
+	q := u.Query()
+	q.Set("folderIds", strconv.Itoa(folderId))
+
+	if raw, code, err = r.get("api/search", q); err != nil {
+		return nil, err
+	}
+	if code != 200 {
+		return nil, fmt.Errorf("HTTP error %d: returns %s", code, raw)
+	}
+	err = json.Unmarshal(raw, &folders)
+	return folders, err
 }

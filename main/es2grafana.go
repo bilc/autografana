@@ -16,40 +16,29 @@ import (
 
 func main() {
 	es := flag.String("es", "http://127.0.0.1:9200", "es url")
-	//	index := flag.String("index", "test1", "es index")
+	esHasAuth := flag.String("esauth", "http://127.0.0.1:9200", "es has auth url")
+	user := flag.String("user", "tom", "es user")
+	password := flag.String("password", "tom", "es password")
 	service := flag.String("service", "mysql", "es index field service")
-	model := flag.String("model", "qps", "es index field model")
-
+	model := flag.String("model", "user-stats", "es index field model")
 	grafana := flag.String("grafana", "http://127.0.0.1:3000", "grafana url")
 	key := flag.String("key", "eyJrIjoiSk5ybDV5Tlp6YkZoQU0wUEZmaktHVE52MllVN1oyR0wiLCJuIjoiYWRtaW4iLCJpZCI6MX0=", "grafana api key")
-	//panel := flag.String("panel","graph","matric panel type: graph, heatmap or all")
 	flag.Parse()
-	//"eyJrIjoidmphWWxFSVg1UzdXMXV3T1hoNWcwVFd2alp6NUQxd2siLCJuIjoiYXBpa2V5Y3VybCIsImlkIjoxfQ=="
-	panel := make(map[string][]string)
-	panel["METRIC_bill"] = []string{"graph"}
-	panel["METRIC_qps"] = []string{"heatmap"}
-	tagsSorts := []string{"TAG_region", "TAG_az", "TAG_host", "TAG_source_type", "TAG_flavor", "TAG_user"}
-	tagsCascade := make(map[string][]string)
-	tagsCascade["TAG_flavor"] = []string{"TAG_source_type"}
-	tagsCascade["TAG_az"] = []string{"TAG_region"}
-	tagsCascade["TAG_host"] = []string{"TAG_az"}
-	tagsCascade["TAG_user"] = []string{"TAG_host", "TAG_flavor"}
 
-	graTags := []string{"TAG_region","TAG_user","TAG_az", "TAG_a", "TAG_b"}
-	err := autografana.Es2Grafana(*es, *service, *model, *grafana, *key, graTags, tagsSorts, tagsCascade, panel)
-	fmt.Println(err)
+	/*mypanel := []autografana.MyPanel{
+		{
+			Title: "bill used",
+			Metrics: []string{"SUM_METRIC_bill_current", "SUM_METRIC_bill_total"},
+			Type: autografana.PANEL_GRAPH,
+			Interval: "10s",
+		},{
+			Title: "qps used",
+			Metrics: []string{"METRIC_qps_current", "METRIC_qps_total"},
+			Type: autografana.PAENL_HEATMAP,
+			Interval: "20s",
+		},
+	}*/
 
-	temp := autografana.TemplateVars{
-		{Name: "TAG_user", Sort: 4},
-		{Name: "TAG_b", Sort: 5},
-		{Name: "TAG_host", Sort: 3},
-		{Name: "TAG_AZ", Sort: 2},
-		{Name: "TAG_region", Sort: 1},
-		{Name: "TAG_a", Sort: 6},
-		{Name: "TAG_c", Sort: 7},
-	}
-	autografana.SortTemplatingList(temp)
-	for _, t := range temp {
-		fmt.Println(t)
-	}
+	url, err := autografana.Es2Grafana(*es, *esHasAuth, *user, *password, *service, *model, *grafana, *key, nil, nil, nil, nil)
+	fmt.Println(url, err)
 }
